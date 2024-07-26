@@ -6,12 +6,9 @@ const dotenv = require("dotenv");
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const bcrypt = require("bcryptjs");
-const authenticateToken = require('./authInterceptor');
 const XlsxPopulate = require('xlsx-populate');
 const path = require('path');
 const fs = require('fs');
-const Connection = require('mysql/lib/Connection');
-const { use } = require('express/lib/application');
 
 dotenv.config({ path: './db.env' });
 
