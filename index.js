@@ -300,26 +300,6 @@ app.post('/login', (req, res) => {
   });
 });
 
-app.post('/admin', (req, res) => {
-  const { username, password } = req.body;
-
-  pool.getConnection((err, connection) => {
-    if (err) return res.status(500).send(err);
-    connection.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
-      connection.release();
-      if (err) return res.status(500).send(err);
-      if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
-        return res.status(401).send('Nombre de usuario o contraseña incorrecta');
-      }
-      if (results[0].role !== 'admin') {
-        return res.status(403).send('Acceso denegado');
-      }
-      const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '8h' });
-      res.status(200).send({ token });
-    });
-  });
-});
-
 app.get('/bases-datos', (req, res) => {
   const query = "SELECT nombre_base_datos FROM bases_datos WHERE nombre_base_datos != 'created'";
 
@@ -682,7 +662,7 @@ app.put('/inventoryUser/:base/:rank/:username', (req, res) => {
   });
 });
 
-
+// Punto de venta
 app.get('/users', (req, res) => {
   const sql = `SELECT id, username, role FROM users`;
   pool.getConnection((err, connection) => {
@@ -695,6 +675,26 @@ app.get('/users', (req, res) => {
       } else {
         res.send(results);
       }
+    });
+  });
+});
+
+app.post('/admin', (req, res) => {
+  const { username, password } = req.body;
+
+  pool.getConnection((err, connection) => {
+    if (err) return res.status(500).send(err);
+    connection.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+      connection.release();
+      if (err) return res.status(500).send(err);
+      if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
+        return res.status(401).send('Nombre de usuario o contraseña incorrecta');
+      }
+      if (results[0].role !== 'admin') {
+        return res.status(403).send('Acceso denegado');
+      }
+      const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '8h' });
+      res.status(200).send({ token });
     });
   });
 });
@@ -896,98 +896,51 @@ app.get('/user/databases/:username', (req, res) => {
   });
 });
 
-app.get('/userDatabase/:username/:baseDatos', (req, res) => {
-  const { username, baseDatos } = req.params;
+app.post('/admin/create/category', async (req, res) => {
+  const { nombreCategoria } = req.body;
+  const sourceTableName = `categorias`;
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
 
-    if (baseDatos) {
-      const userTableName = `${username}_${baseDatos}`;
-      const sourceTableName = `baseDeDatos_${baseDatos}`;
+    const checkTableExistsQuery = `SHOW TABLES LIKE '${sourceTableName}'`;
+    connection.query(checkTableExistsQuery, (err, results) => {
+      if (err) {
+        connection.release();
+        return res.status(500).send(err);
+      }
 
-      const checkTableExistsQuery = `SHOW TABLES LIKE '${userTableName}'`;
-      connection.query(checkTableExistsQuery, (err, results) => {
-        if (err) {
-          connection.release();
-          return res.status(500).send(err);
-        }
-
-        if (results.length > 0) {
-          const getTableDataQuery = `SELECT database FROM ${userTableName}`;
-          connection.query(getTableDataQuery, (err, results) => {
+      if (results.length === 0) {
+        // La tabla no existe, crearla copiando la estructura y datos de baseDeDatos_baseDatos
+        const createTableQuery = `CREATE TABLE ${sourceTableName}`;
+        connection.query(createTableQuery, (err) => {
+          if (err) {
+            connection.release();
+            return res.status(500).send(err);
+          }
+          // Ahora inserta los valores en userDatabases
+          connection.query(`INSERT INTO ${sourceTableName} (categoria) VALUES (?)`, [nombreCategoria], (err, result) => {
             connection.release();
             if (err) {
               return res.status(500).send(err);
             }
-            res.status(200).json(results);
+            res.status(201).send('Base de datos añadida y tabla creada');
           });
-        } else {
-          const createTableQuery = `CREATE TABLE ${userTableName} LIKE ${sourceTableName}`;
-          connection.query(createTableQuery, (err) => {
-            if (err) {
-              connection.release();
-              return res.status(500).send(err);
-            }
-          });
-        }
-      });
-    } else {
-      const userTableName = `${username}_database`;
-      const getDatabasesQuery = `SELECT database FROM ${userTableName}`;
-
-      connection.query(getDatabasesQuery, (err, results) => {
-        if (err) {
+        });
+      } else {
+        // La tabla ya existe, solo insertar en userDatabases
+        connection.query(`INSERT INTO ${sourceTableName} (categoria) VALUES (?)`, [nombreCategoria], (err, result) => {
           connection.release();
-          return res.status(500).send(err);
-        }
-        connection.release();
-        res.status(200).json(results);
-      });
-    }
+          if (err) {
+            return res.status(500).send(err);
+          }
+          res.status(201).send('Base de datos añadida y tabla creada');
+        });
+      }
+    });
   });
 });
 
-
-async function main() {
-  try {
-    const workbook = await XlsxPopulate.fromFileAsync('./Database.xlsx');
-    const sheet = workbook.sheet(0);
-    const usedRange = sheet.usedRange();
-    const data = usedRange.value();
-    const headers = data[0].map(header => `\`${header}\``);
-
-    await new Promise((resolve, reject) => {
-      pool.query('DELETE FROM data', (err, result) => {
-        if (err) {
-          console.error('Error deleting existing records:', err);
-          reject(err);
-        } else {
-          console.log('Existing records deleted');
-          resolve(result);
-        }
-      });
-    });
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const query = `INSERT INTO data (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
-      await new Promise((resolve, reject) => {
-        pool.query(query, row, (err, result) => {
-          if (err) {
-            console.error(`Error inserting row ${i}:`, err);
-            reject(err);
-          } else {
-            resolve(result);
-          }
-        });
-      });
-    }
-  } catch (error) {
-    console.error('Error processing file:', error);
-    throw error;
-  }
-}
 
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
