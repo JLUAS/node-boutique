@@ -952,7 +952,7 @@ app.get('/admin/get/categories', async (req, res) => {
 });
 
 app.post('/admin/create/product', async (req, res) => {
-  const { nombre, precio, categoria } = req.body;
+  const { nombre, precio, categoria, estado } = req.body;
   const sourceTableName = 'productos';
 
   pool.getConnection((err, connection) => {
@@ -970,14 +970,15 @@ app.post('/admin/create/product', async (req, res) => {
           id INT AUTO_INCREMENT PRIMARY KEY,
           nombre VARCHAR(255) NOT NULL,
           precio INT NOT NULL,
-          categoria VARCHAR(255) NOT NULL
+          categoria VARCHAR(255) NOT NULL,
+          estado VARCHAR(255) NOT NULL
         )`;
         connection.query(createTableQuery, (err) => {
           if (err) {
             connection.release();
             return res.status(500).send(err);
           }
-          connection.query(`INSERT INTO ${sourceTableName} (nombre, precio, categoria) VALUES (?, ?, ?)`, [nombre, precio, categoria], (err, result) => {
+          connection.query(`INSERT INTO ${sourceTableName} (nombre, precio, categoria, estado) VALUES (?, ?, ?, ?)`, [nombre, precio, categoria, estado], (err, result) => {
             connection.release();
             if (err) {
               return res.status(500).send(err);
