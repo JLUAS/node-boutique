@@ -938,18 +938,19 @@ app.post('/admin/create/category', async (req, res) => {
   });
 });
 
-app.get('admin/get/categories', async( req, res) =>{
+app.get('/admin/get/categories', async (req, res) => {
   const query = 'SELECT categoria FROM categorias';
 
   pool.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching planograms:', err);
-      res.status(500).send('Error fetching planograms');
+      console.error('Error fetching categories:', err);
+      res.status(500).send('Error fetching categories');
     } else {
       res.status(200).json(results);
     }
   });
-})
+});
+
 
 app.post('/admin/create/product', async (req, res) => {
 
