@@ -898,7 +898,7 @@ app.get('/user/databases/:username', (req, res) => {
 
 app.post('/admin/create/category', async (req, res) => {
   const { nombreCategoria } = req.body;
-  const sourceTableName = `categorias`;
+  const sourceTableName = 'categorias';
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
@@ -911,35 +911,33 @@ app.post('/admin/create/category', async (req, res) => {
       }
 
       if (results.length === 0) {
-        // La tabla no existe, crearla copiando la estructura y datos de baseDeDatos_baseDatos
-        const createTableQuery = `CREATE TABLE ${sourceTableName}`;
+        const createTableQuery = `CREATE TABLE ${sourceTableName} (id INT AUTO_INCREMENT PRIMARY KEY, categoria VARCHAR(255) NOT NULL)`;
         connection.query(createTableQuery, (err) => {
           if (err) {
             connection.release();
             return res.status(500).send(err);
           }
-          // Ahora inserta los valores en userDatabases
           connection.query(`INSERT INTO ${sourceTableName} (categoria) VALUES (?)`, [nombreCategoria], (err, result) => {
             connection.release();
             if (err) {
               return res.status(500).send(err);
             }
-            res.status(201).send('Base de datos añadida y tabla creada');
+            res.status(201).send('Categoría añadida y tabla creada');
           });
         });
       } else {
-        // La tabla ya existe, solo insertar en userDatabases
         connection.query(`INSERT INTO ${sourceTableName} (categoria) VALUES (?)`, [nombreCategoria], (err, result) => {
           connection.release();
           if (err) {
             return res.status(500).send(err);
           }
-          res.status(201).send('Base de datos añadida y tabla creada');
+          res.status(201).send('Categoría añadida');
         });
       }
     });
   });
 });
+
 
 
 app.listen(port, () => {
