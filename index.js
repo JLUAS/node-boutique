@@ -987,7 +987,7 @@ app.post('/admin/create/product', async (req, res) => {
           });
         });
       } else {
-        connection.query(`INSERT INTO ${sourceTableName} (nombre, precio, categoria) VALUES (?, ?, ?)`, [nombre, precio, categoria], (err, result) => {
+        connection.query(`INSERT INTO ${sourceTableName} (nombre, precio, categoria, estado) VALUES (?, ?, ?, ?)`, [nombre, precio, categoria], (err, result) => {
           connection.release();
           if (err) {
             return res.status(500).send(err);
