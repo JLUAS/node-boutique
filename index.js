@@ -938,7 +938,22 @@ app.post('/admin/create/category', async (req, res) => {
   });
 });
 
+app.get('admin/get/categories', async( req, res) =>{
+  const query = 'SELECT categoria FROM categorias';
 
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching planograms:', err);
+      res.status(500).send('Error fetching planograms');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+})
+
+app.post('/admin/create/product', async (req, res) => {
+
+})
 
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
