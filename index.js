@@ -953,8 +953,59 @@ app.get('/admin/get/categories', async (req, res) => {
 
 
 app.post('/admin/create/product', async (req, res) => {
+  const { nombreCategoria } = req.body;
+  const sourceTableName = 'productos';
 
+  pool.getConnection((err, connection) => {
+    if (err) return res.status(500).send(err);
+
+    const checkTableExistsQuery = `SHOW TABLES LIKE '${sourceTableName}'`;
+    connection.query(checkTableExistsQuery, (err, results) => {
+      if (err) {
+        connection.release();
+        return res.status(500).send(err);
+      }
+
+      if (results.length === 0) {
+        const createTableQuery = `CREATE TABLE ${sourceTableName} (id INT AUTO_INCREMENT PRIMARY KEY , nombre VARCHAR(255) NOT NULL, precio INT NOT NULL, categoria VARCHAR(255) NOT NULL)`;
+        connection.query(createTableQuery, (err) => {
+          if (err) {
+            connection.release();
+            return res.status(500).send(err);
+          }
+          connection.query(`INSERT INTO ${sourceTableName} (categoria) VALUES (?)`, [nombreCategoria], (err, result) => {
+            connection.release();
+            if (err) {
+              return res.status(500).send(err);
+            }
+            res.status(201).send('Categoría añadida y tabla creada');
+          });
+        });
+      } else {
+        connection.query(`INSERT INTO ${sourceTableName} (categoria) VALUES (?)`, [nombreCategoria], (err, result) => {
+          connection.release();
+          if (err) {
+            return res.status(500).send(err);
+          }
+          res.status(201).send('Categoría añadida');
+        });
+      }
+    });
+  });
 })
+
+app.get('/admin/get/products', async (req, res) => {
+  const query = 'SELECT * FROM productos';
+
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching categories:', err);
+      res.status(500).send('Error fetching categories');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
 
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
