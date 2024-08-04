@@ -1014,13 +1014,8 @@ app.get('/admin/get/products', async (req, res) => {
 app.get('/admin/get/products/category', async (req, res) => {
   const { categoria } = req.query;
 
-  let query = 'SELECT * FROM productos';
-  let queryParams = [];
-
-  if (categoria) {
-    query += ' WHERE categoria = ?';
-    queryParams.push(categoria);
-  }
+  let query = 'SELECT * FROM productos WHERE categoria = ?';
+  let queryParams = categoria;
 
   pool.query(query, queryParams, (err, results) => {
     if (err) {
