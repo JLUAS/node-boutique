@@ -951,7 +951,6 @@ app.get('/admin/get/categories', async (req, res) => {
   });
 });
 
-
 app.post('/admin/create/product', async (req, res) => {
   const { nombre, precio, categoria } = req.body;
   const sourceTableName = 'productos';
@@ -1006,6 +1005,27 @@ app.get('/admin/get/products', async (req, res) => {
     if (err) {
       console.error('Error fetching categories:', err);
       res.status(500).send('Error fetching categories');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
+app.get('/admin/get/products/category', async (req, res) => {
+  const { categoria } = req.query;
+
+  let query = 'SELECT * FROM productos';
+  let queryParams = [];
+
+  if (categoria) {
+    query += ' WHERE categoria = ?';
+    queryParams.push(categoria);
+  }
+
+  pool.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Error fetching products:', err);
+      res.status(500).send('Error fetching products');
     } else {
       res.status(200).json(results);
     }
