@@ -1032,6 +1032,7 @@ app.get('/admin/get/products/category', async (req, res) => {
   });
 });
 
+
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
