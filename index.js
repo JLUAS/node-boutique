@@ -1028,6 +1028,21 @@ app.get('/admin/get/products/category', async (req, res) => {
   });
 });
 
+app.put('/admin/update/product/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nombre, precio, categoria, estado } = req.body;
+
+  const query = `UPDATE productos SET nombre = ?, precio = ?, categoria = ?, estado = ? WHERE id = ?`;
+
+  pool.query(query, [nombre, precio, categoria, estado, id], (err, result) => {
+    if (err) {
+      console.error('Error updating product:', err);
+      return res.status(500).send('Error updating product');
+    }
+
+    res.status(200).send('Producto actualizado');
+  });
+});
 
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
