@@ -1102,6 +1102,22 @@ app.get('/admin/get/mesa', async (req, res) => {
   });
 });
 
+app.put('/admin/update/mesa/:id', async (req, res) => {
+  const { id } = req.params;
+  const { mesa, estado } = req.body;
+
+  const query = `UPDATE mesas SET mesa = ?, estado = ? WHERE id = ?`;
+
+  pool.query(query, [mesa, estado, id], (err, result) => {
+    if (err) {
+      console.error('Error updating product:', err);
+      return res.status(500).send('Error updating product');
+    }
+
+    res.status(200).send('Producto actualizado');
+  });
+});
+
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
