@@ -1118,6 +1118,67 @@ app.put('/admin/update/mesa/:id', async (req, res) => {
   });
 });
 
+app.post('/user/create/new/payment', async (req, res) => {
+  const { metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto} = req.body;
+  const sourceTableName = 'ventasHoy';
+
+  pool.getConnection((err, connection) => {
+    if (err) return res.status(500).send(err);
+
+    const checkTableExistsQuery = `SHOW TABLES LIKE '${sourceTableName}'`;
+    connection.query(checkTableExistsQuery, (err, results) => {
+      if (err) {
+        connection.release();
+        return res.status(500).send(err);
+      }
+
+      if (results.length === 0) {
+        const createTableQuery = `CREATE TABLE ${sourceTableName} (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          metodoPago INT NOT NULL,
+          totalVenta INT NOT NULL ,
+          descuentoTotal INT NOT NULL,
+          propina INT NOT NULL,
+          montoPagado INT NOT NULL,
+          cambioDevuelto INT NOT NULL,
+        )`;
+        connection.query(createTableQuery, (err) => {
+          if (err) {
+            connection.release();
+            return res.status(500).send(err);
+          }
+          connection.query(`INSERT INTO ${sourceTableName} (metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto) VALUES (?, ?)`, [metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto], (err, result) => {
+            connection.release();
+            if (err) {
+              return res.status(500).send(err);
+            }
+            res.status(201).send('Producto añadido y tabla creada');
+          });
+        });
+      } else {
+        connection.query(`INSERT INTO ${sourceTableName} (metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto) VALUES (?, ?)`, [metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto], (err, result) => {
+          connection.release();
+          if (err) {
+            return res.status(500).send(err);
+          }
+          res.status(201).send('Producto añadido');
+        });
+      }
+    });
+  });
+});
+
+app.get('/admin/get/payments', async (req, res) => {
+  let query = 'SELECT * FROM ventasHoy';
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching products:', err);
+      res.status(500).send('Error fetching products');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
