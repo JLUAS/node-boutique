@@ -1012,6 +1012,19 @@ app.get('/admin/get/products', async (req, res) => {
   });
 });
 
+app.get('/user/get/products', async (req, res) => {
+  const query = 'SELECT * FROM productos WHERE estado = activo';
+
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching categories:', err);
+      res.status(500).send('Error fetching categories');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
 app.get('/admin/get/products/category', async (req, res) => {
   const { categoria } = req.query;
 
