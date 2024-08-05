@@ -1013,9 +1013,11 @@ app.get('/admin/get/products', async (req, res) => {
 });
 
 app.get('/user/get/products', async (req, res) => {
-  const query = 'SELECT * FROM productos WHERE estado = activo';
+  const { categoria } = req.query;
+  const query = `SELECT * FROM productos WHERE estado = 'activo' AND categoria = ?`;
+  let queryParams = categoria;
 
-  pool.query(query, (err, results) => {
+  pool.query(query,queryParams, (err, results) => {
     if (err) {
       console.error('Error fetching categories:', err);
       res.status(500).send('Error fetching categories');
