@@ -1044,6 +1044,52 @@ app.put('/admin/update/product/:id', async (req, res) => {
   });
 });
 
+app.post('/admin/create/mesa', async (req, res) => {
+  const { mesa, estado } = req.body;
+  const sourceTableName = 'mesas';
+
+  pool.getConnection((err, connection) => {
+    if (err) return res.status(500).send(err);
+
+    const checkTableExistsQuery = `SHOW TABLES LIKE '${sourceTableName}'`;
+    connection.query(checkTableExistsQuery, (err, results) => {
+      if (err) {
+        connection.release();
+        return res.status(500).send(err);
+      }
+
+      if (results.length === 0) {
+        const createTableQuery = `CREATE TABLE ${sourceTableName} (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mesa INT NOT NULL,
+          estado VARCHAR(255) NOT NULL
+        )`;
+        connection.query(createTableQuery, (err) => {
+          if (err) {
+            connection.release();
+            return res.status(500).send(err);
+          }
+          connection.query(`INSERT INTO ${sourceTableName} (mesa, estado) VALUES (?, ?)`, [mesa, estado], (err, result) => {
+            connection.release();
+            if (err) {
+              return res.status(500).send(err);
+            }
+            res.status(201).send('Producto añadido y tabla creada');
+          });
+        });
+      } else {
+        connection.query(`INSERT INTO ${sourceTableName} (mesa, estado) VALUES (?, ?)`, [mesa, estado], (err, result) => {
+          connection.release();
+          if (err) {
+            return res.status(500).send(err);
+          }
+          res.status(201).send('Producto añadido');
+        });
+      }
+    });
+  });
+});
+
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
