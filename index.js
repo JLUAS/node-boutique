@@ -1092,9 +1092,7 @@ app.post('/admin/create/mesa', async (req, res) => {
 
 app.get('/admin/get/mesa', async (req, res) => {
   let query = 'SELECT * FROM mesas';
-  let queryParams = categoria;
-
-  pool.query(query, queryParams, (err, results) => {
+  pool.query(query, (err, results) => {
     if (err) {
       console.error('Error fetching products:', err);
       res.status(500).send('Error fetching products');
