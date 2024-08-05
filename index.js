@@ -1147,7 +1147,7 @@ app.post('/user/create/new/payment', async (req, res) => {
             connection.release();
             return res.status(500).send(err);
           }
-          connection.query(`INSERT INTO ${sourceTableName} (metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto) VALUES (?, ?)`, [metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto], (err, result) => {
+          connection.query(`INSERT INTO ${sourceTableName} (metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto) VALUES (?, ?, ? ,?, ?, ?)`, [metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto], (err, result) => {
             connection.release();
             if (err) {
               return res.status(500).send(err);
@@ -1156,7 +1156,7 @@ app.post('/user/create/new/payment', async (req, res) => {
           });
         });
       } else {
-        connection.query(`INSERT INTO ${sourceTableName} (metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto) VALUES (?, ?)`, [metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto], (err, result) => {
+        connection.query(`INSERT INTO ${sourceTableName} (metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto) VALUES (?, ?, ? ,?, ?, ?)`, [metodoPago, totalVenta, descuentoTotal, propina, montoPagado, cambioDevuelto], (err, result) => {
           connection.release();
           if (err) {
             return res.status(500).send(err);
@@ -1179,6 +1179,69 @@ app.get('/admin/get/payments', async (req, res) => {
     }
   });
 });
+
+app.post('/user/create/new/order', async (req, res) => {
+  const { mesa, producto, cantidad, precioUnitario, entregado, pagado} = req.body;
+  const sourceTableName = 'ordenes';
+
+  pool.getConnection((err, connection) => {
+    if (err) return res.status(500).send(err);
+
+    const checkTableExistsQuery = `SHOW TABLES LIKE '${sourceTableName}'`;
+    connection.query(checkTableExistsQuery, (err, results) => {
+      if (err) {
+        connection.release();
+        return res.status(500).send(err);
+      }
+
+      if (results.length === 0) {
+        const createTableQuery = `CREATE TABLE ${sourceTableName} (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mesa INT NOT NULL,
+          producto VARCHAR(255) NOT NULL ,
+          cantidad INT NOT NULL,
+          precioUnitario INT NOT NULL,
+          entregado VARCHAR(255) NOT NULL,
+          pagado VARCHAR(255) NOT NULL,
+        )`;
+        connection.query(createTableQuery, (err) => {
+          if (err) {
+            connection.release();
+            return res.status(500).send(err);
+          }
+          connection.query(`INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ? ,?, ?, ?)`, [mesa, producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
+            connection.release();
+            if (err) {
+              return res.status(500).send(err);
+            }
+            res.status(201).send('Producto añadido y tabla creada');
+          });
+        });
+      } else {
+        connection.query(`INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ? ,?, ?, ?)`, [mesa, producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
+          connection.release();
+          if (err) {
+            return res.status(500).send(err);
+          }
+          res.status(201).send('Producto añadido');
+        });
+      }
+    });
+  });
+});
+
+app.get('/user/get/orders', async (req, res) => {
+  let query = 'SELECT * FROM ordenes';
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching products:', err);
+      res.status(500).send('Error fetching products');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
