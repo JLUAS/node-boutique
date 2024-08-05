@@ -1181,7 +1181,7 @@ app.get('/admin/get/payments', async (req, res) => {
 });
 
 app.post('/user/create/new/order', async (req, res) => {
-  const { mesa, producto, cantidad, precioUnitario, entregado, pagado} = req.body;
+  const { mesa, producto, cantidad, precioUnitario, entregado, pagado } = req.body;
   const sourceTableName = 'ordenes';
 
   pool.getConnection((err, connection) => {
@@ -1198,18 +1198,18 @@ app.post('/user/create/new/order', async (req, res) => {
         const createTableQuery = `CREATE TABLE ${sourceTableName} (
           id INT AUTO_INCREMENT PRIMARY KEY,
           mesa INT NOT NULL,
-          producto VARCHAR(255) NOT NULL ,
+          producto VARCHAR(255) NOT NULL,
           cantidad INT NOT NULL,
           precioUnitario INT NOT NULL,
           entregado VARCHAR(255) NOT NULL,
-          pagado VARCHAR(255) NOT NULL,
+          pagado VARCHAR(255) NOT NULL
         )`;
         connection.query(createTableQuery, (err) => {
           if (err) {
             connection.release();
             return res.status(500).send(err);
           }
-          connection.query(`INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ? ,?, ?, ?)`, [mesa, producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
+          connection.query(`INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ?, ?, ?, ?)`, [mesa, producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
             connection.release();
             if (err) {
               return res.status(500).send(err);
@@ -1218,7 +1218,7 @@ app.post('/user/create/new/order', async (req, res) => {
           });
         });
       } else {
-        connection.query(`INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ? ,?, ?, ?)`, [mesa, producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
+        connection.query(`INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ?, ?, ?, ?)`, [mesa, producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
           connection.release();
           if (err) {
             return res.status(500).send(err);
