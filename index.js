@@ -1196,7 +1196,12 @@ app.get('/admin/get/payments', async (req, res) => {
 });
 
 app.post('/user/create/new/order', async (req, res) => {
-  const { mesa, producto, cantidad, precioUnitario, entregado, pagado } = req.body;
+  const { ordenes } = req.body;
+  if (!Array.isArray(ordenes) || ordenes.length === 0) {
+    return res.status(400).send('No orders provided');
+  }
+
+  const mesa = ordenes[0].mesa; // Asumiendo que todas las órdenes son para la misma mesa
   const sourceTableName = 'ordenes';
   const sourceTableMesa = `orden_${mesa}`;
 
@@ -1219,8 +1224,10 @@ app.post('/user/create/new/order', async (req, res) => {
         }
 
         const createOrInsert = () => {
-          const insertQuery = `INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ?, ?, ?, ?)`;
-          connection.query(insertQuery, [mesa, producto, cantidad, precioUnitario, entregado, pagado], err => {
+          const insertQuery = `INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES ?`;
+          const orderValues = ordenes.map(order => [order.mesa, order.producto, order.cantidad, order.precioUnitario, order.entregado, order.pagado]);
+
+          connection.query(insertQuery, [orderValues], err => {
             if (err) {
               return connection.rollback(() => {
                 connection.release();
@@ -1228,8 +1235,10 @@ app.post('/user/create/new/order', async (req, res) => {
               });
             }
 
-            const insertMesaQuery = `INSERT INTO ${sourceTableMesa} (producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ?, ?, ?)`;
-            connection.query(insertMesaQuery, [producto, cantidad, precioUnitario, entregado, pagado], err => {
+            const insertMesaQuery = `INSERT INTO ${sourceTableMesa} (producto, cantidad, precioUnitario, entregado, pagado) VALUES ?`;
+            const mesaOrderValues = ordenes.map(order => [order.producto, order.cantidad, order.precioUnitario, order.entregado, order.pagado]);
+
+            connection.query(insertMesaQuery, [mesaOrderValues], err => {
               if (err) {
                 return connection.rollback(() => {
                   connection.release();
@@ -1245,7 +1254,7 @@ app.post('/user/create/new/order', async (req, res) => {
                   });
                 }
                 connection.release();
-                res.status(201).send('Producto añadido');
+                res.status(201).send('Ordenes añadidas');
               });
             });
           });
@@ -1316,7 +1325,6 @@ app.post('/user/create/new/order', async (req, res) => {
     });
   });
 });
-
 
 app.get('/user/get/orders', async (req, res) => {
   let query = 'SELECT * FROM ordenes';
