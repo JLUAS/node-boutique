@@ -1203,7 +1203,7 @@ app.post('/user/create/new/order', async (req, res) => {
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
 
-    connection.beginTransaction((err) => {
+    connection.beginTransaction(err => {
       if (err) {
         connection.release();
         return res.status(500).send(err);
@@ -1220,17 +1220,7 @@ app.post('/user/create/new/order', async (req, res) => {
 
         const createOrInsert = () => {
           const insertQuery = `INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ?, ?, ?, ?)`;
-          connection.query(insertQuery, [mesa, producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
-            if (err) {
-              return connection.rollback(() => {
-                connection.release();
-                res.status(500).send(err);
-              });
-            }
-          });
-
-          const insertMesaQuery = `INSERT INTO ${sourceTableMesa} (producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ?, ?, ?)`;
-          connection.query(insertMesaQuery, [producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
+          connection.query(insertQuery, [mesa, producto, cantidad, precioUnitario, entregado, pagado], err => {
             if (err) {
               return connection.rollback(() => {
                 connection.release();
@@ -1238,21 +1228,57 @@ app.post('/user/create/new/order', async (req, res) => {
               });
             }
 
-            connection.commit((err) => {
+            const insertMesaQuery = `INSERT INTO ${sourceTableMesa} (producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ?, ?, ?)`;
+            connection.query(insertMesaQuery, [producto, cantidad, precioUnitario, entregado, pagado], err => {
               if (err) {
                 return connection.rollback(() => {
                   connection.release();
                   res.status(500).send(err);
                 });
               }
-              connection.release();
-              res.status(201).send('Producto añadido');
+
+              connection.commit(err => {
+                if (err) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    res.status(500).send(err);
+                  });
+                }
+                connection.release();
+                res.status(201).send('Producto añadido');
+              });
             });
           });
         };
 
-        if (results.length === 0) {
-          const createTableQuery = `CREATE TABLE ${sourceTableName} (
+        const createTableIfNotExists = (tableName, createTableQuery, callback) => {
+          connection.query(`SHOW TABLES LIKE '${tableName}'`, (err, results) => {
+            if (err) {
+              return connection.rollback(() => {
+                connection.release();
+                res.status(500).send(err);
+              });
+            }
+
+            if (results.length === 0) {
+              connection.query(createTableQuery, err => {
+                if (err) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    res.status(500).send(err);
+                  });
+                }
+                callback();
+              });
+            } else {
+              callback();
+            }
+          });
+        };
+
+        createTableIfNotExists(
+          sourceTableName,
+          `CREATE TABLE ${sourceTableName} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             mesa INT NOT NULL,
             producto VARCHAR(255) NOT NULL,
@@ -1260,63 +1286,32 @@ app.post('/user/create/new/order', async (req, res) => {
             precioUnitario INT NOT NULL,
             entregado VARCHAR(255) NOT NULL,
             pagado VARCHAR(255) NOT NULL
-          )`;
-          connection.query(createTableQuery, (err) => {
-            if (err) {
-              return connection.rollback(() => {
-                connection.release();
-                res.status(500).send(err);
-              });
-            }
-            createOrInsert();
-          });
-        } else {
-          createOrInsert();
-        }
-
-        const checkTableMesaExistsQuery = `SHOW TABLES LIKE '${sourceTableMesa}'`;
-        connection.query(checkTableMesaExistsQuery, (err, results) => {
-          if (err) {
-            return connection.rollback(() => {
-              connection.release();
-              res.status(500).send(err);
-            });
-          }
-
-          const deleteAndInsert = () => {
-            connection.query(`DELETE FROM ${sourceTableMesa}`, (err, result) => {
-              if (err) {
-                return connection.rollback(() => {
-                  connection.release();
-                  res.status(500).send(err);
+          )`,
+          () => {
+            createTableIfNotExists(
+              sourceTableMesa,
+              `CREATE TABLE ${sourceTableMesa} (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                producto VARCHAR(255) NOT NULL,
+                cantidad INT NOT NULL,
+                precioUnitario INT NOT NULL,
+                entregado VARCHAR(255) NOT NULL,
+                pagado VARCHAR(255) NOT NULL
+              )`,
+              () => {
+                connection.query(`DELETE FROM ${sourceTableMesa}`, err => {
+                  if (err) {
+                    return connection.rollback(() => {
+                      connection.release();
+                      res.status(500).send(err);
+                    });
+                  }
+                  createOrInsert();
                 });
               }
-              createOrInsert();
-            });
-          };
-
-          if (results.length === 0) {
-            const createMesaTableQuery = `CREATE TABLE ${sourceTableMesa} (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              producto VARCHAR(255) NOT NULL,
-              cantidad INT NOT NULL,
-              precioUnitario INT NOT NULL,
-              entregado VARCHAR(255) NOT NULL,
-              pagado VARCHAR(255) NOT NULL
-            )`;
-            connection.query(createMesaTableQuery, (err) => {
-              if (err) {
-                return connection.rollback(() => {
-                  connection.release();
-                  res.status(500).send(err);
-                });
-              }
-              deleteAndInsert();
-            });
-          } else {
-            deleteAndInsert();
+            );
           }
-        });
+        );
       });
     });
   });
