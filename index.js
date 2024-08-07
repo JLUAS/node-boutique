@@ -1283,6 +1283,18 @@ app.post('/user/create/new/order', async (req, res) => {
             });
           }
 
+          const deleteAndInsert = () => {
+            connection.query(`DELETE FROM ${sourceTableMesa}`, (err, result) => {
+              if (err) {
+                return connection.rollback(() => {
+                  connection.release();
+                  res.status(500).send(err);
+                });
+              }
+              createOrInsert();
+            });
+          };
+
           if (results.length === 0) {
             const createMesaTableQuery = `CREATE TABLE ${sourceTableMesa} (
               id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1299,26 +1311,10 @@ app.post('/user/create/new/order', async (req, res) => {
                   res.status(500).send(err);
                 });
               }
-              connection.query(`DELETE FROM ${sourceTableMesa}`, (err, result) => {
-                if (err) {
-                  return connection.rollback(() => {
-                    connection.release();
-                    res.status(500).send(err);
-                  });
-                }
-                createOrInsert();
-              });
+              deleteAndInsert();
             });
           } else {
-            connection.query(`DELETE FROM ${sourceTableMesa}`, (err, result) => {
-              if (err) {
-                return connection.rollback(() => {
-                  connection.release();
-                  res.status(500).send(err);
-                });
-              }
-              createOrInsert();
-            });
+            deleteAndInsert();
           }
         });
       });
