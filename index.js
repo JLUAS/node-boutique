@@ -1265,6 +1265,13 @@ app.post('/user/create/new/order', async (req, res) => {
             connection.release();
             return res.status(500).send(err);
           }
+          connection.query(`DELETE FROM ${sourceTableMesa}`, (err, result) => {
+            connection.release();
+            if (err) {
+              return res.status(500).send(err);
+            }
+            res.status(201).send('Limpieza con exito de base de datos');
+          });
           connection.query(`INSERT INTO ${sourceTableMesa} (producto, cantidad, precioUnitario, entregado, pagado) VALUES ( ?, ?, ?, ?, ?)`, [producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
             connection.release();
             if (err) {
@@ -1274,6 +1281,13 @@ app.post('/user/create/new/order', async (req, res) => {
           });
         });
       } else {
+        connection.query(`DELETE FROM ${sourceTableMesa}`, (err, result) => {
+          connection.release();
+          if (err) {
+            return res.status(500).send(err);
+          }
+          res.status(201).send('Limpieza con exito de base de datos');
+        });
         connection.query(`INSERT INTO ${sourceTableMesa} (producto, cantidad, precioUnitario, entregado, pagado) VALUES ( ?, ?, ?, ?, ?)`, [producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
           connection.release();
           if (err) {
