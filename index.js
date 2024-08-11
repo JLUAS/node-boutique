@@ -1368,9 +1368,9 @@ app.put('/user/update/orden/:mesa', async (req, res) => {
 
     res.status(200).send('Producto actualizado');
   });
-  const queryMesa = `UPDATE orden_${mesa}  SET cantidad = ? WHERE mesa = ? and producto = ?`;
+  const queryMesa = `UPDATE orden_${mesa}  SET cantidad = ? and producto = ?`;
 
-  pool.query(queryMesa, [cantidad ,mesa, producto], (err, result) => {
+  pool.query(queryMesa, [cantidad , producto], (err, result) => {
     if (err) {
       console.error('Error updating product:', err);
       return res.status(500).send('Error updating product');
