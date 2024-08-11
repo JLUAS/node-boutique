@@ -1354,6 +1354,77 @@ app.get('/user/get/orders/mesa', async (req, res) => {
   });
 });
 
+app.put('/admin/update/orden/:mesa', async (req, res) => {
+  const { mesa } = req.params;
+  const { producto, cantidad } = req.body;
+
+  // Definir las consultas para actualizar las tablas
+  const updateOrdenesQuery = `
+    UPDATE ordenes
+    SET cantidad = ?
+    WHERE mesa = ? AND producto = ?
+  `;
+
+  const updateMesaQuery = `
+    UPDATE orden_${mesa}
+    SET cantidad = ?
+    WHERE producto = ?
+  `;
+
+  // Iniciar la transacción
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error getting connection from pool:', err);
+      return res.status(500).send('Error connecting to database');
+    }
+
+    connection.beginTransaction(err => {
+      if (err) {
+        console.error('Error starting transaction:', err);
+        connection.release();
+        return res.status(500).send('Error starting transaction');
+      }
+
+      // Actualizar la tabla ordenes
+      connection.query(updateOrdenesQuery, [cantidad, mesa, producto], (err, result) => {
+        if (err) {
+          console.error('Error updating ordenes:', err);
+          return connection.rollback(() => {
+            connection.release();
+            res.status(500).send('Error updating ordenes');
+          });
+        }
+
+        // Actualizar la tabla orden_#mesa
+        connection.query(updateMesaQuery, [cantidad, producto], (err, result) => {
+          if (err) {
+            console.error(`Error updating orden_${mesa}:`, err);
+            return connection.rollback(() => {
+              connection.release();
+              res.status(500).send(`Error updating orden_${mesa}`);
+            });
+          }
+
+          // Confirmar la transacción si todo salió bien
+          connection.commit(err => {
+            if (err) {
+              console.error('Error committing transaction:', err);
+              return connection.rollback(() => {
+                connection.release();
+                res.status(500).send('Error committing transaction');
+              });
+            }
+
+            // Transacción completada con éxito
+            connection.release();
+            res.status(200).send('Orden actualizada exitosamente');
+          });
+        });
+      });
+    });
+  });
+});
+
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
