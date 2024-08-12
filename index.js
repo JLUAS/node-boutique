@@ -1395,7 +1395,8 @@ app.post('/user/insert/orden/:mesa', async (req, res) => {
 
     res.status(200).send('Producto actualizado');
   });
-  const queryMesa = `INSERT INTO orden_$(mesa) (producto, cantidad, precioUnitario, entregado, pagado)
+  
+  const queryMesa = `INSERT INTO orden_${mesa} (producto, cantidad, precioUnitario, entregado, pagado)
     VALUES (?, ?, ?, ?, ?)`;
 
   pool.query(queryMesa, [producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
