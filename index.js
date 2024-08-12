@@ -1380,6 +1380,34 @@ app.put('/user/update/orden/:mesa', async (req, res) => {
   });
 });
 
+app.post('/user/insert/orden/:mesa', async (req, res) => {
+  const {mesa} = req.params;
+  const {producto, cantidad, precioUnitario, entregado, pagado } = req.body
+  
+  const query = `INSERT INTO ordenes (mesa, producto, cantidad, precioUnitario, entregado, pagado)
+    VALUES (?, ?, ?, ?, ?, ?)`;
+
+  pool.query(query, [mesa , producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
+    if (err) {
+      console.error('Error updating product:', err);
+      return res.status(500).send('Error updating product');
+    }
+
+    res.status(200).send('Producto actualizado');
+  });
+  const queryMesa = `INSERT INTO orden_$(mesa) (producto, cantidad, precioUnitario, entregado, pagado)
+    VALUES (?, ?, ?, ?, ?)`;
+
+  pool.query(queryMesa, [cantidad , producto], (err, result) => {
+    if (err) {
+      console.error('Error updating product:', err);
+      return res.status(500).send('Error updating product');
+    }
+
+    res.status(200).send('Producto actualizado');
+  });
+});
+
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
