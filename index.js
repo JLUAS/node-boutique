@@ -713,7 +713,7 @@ app.post('/register/admin', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      connection.query('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, 'admin'], (err, result) => {
+      connection.query('INSERT INTO usuarios (username, email, password, role) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, 'admin'], (err, result) => {
         if (err) {
           connection.rollback(() => {
             connection.release();
@@ -751,7 +751,7 @@ app.post('/register/user', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      connection.query('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, role], (err, result) => {
+      connection.query('INSERT INTO usuarios (username, email, password, role) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, role], (err, result) => {
         if (err) {
           connection.rollback(() => {
             connection.release();
