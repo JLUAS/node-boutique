@@ -285,7 +285,7 @@ app.post('/login', (req, res) => {
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
-    connection.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+    connection.query('SELECT * FROM users WHERE nombre = ?', [username], async (err, results) => {
       connection.release();
       if (err) return res.status(500).send(err);
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
@@ -294,7 +294,7 @@ app.post('/login', (req, res) => {
       if (results[0].role !== 'user') {
         return res.status(403).send('Acceso denegado');
       }
-      const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '8h' });
+      const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '74h' });
       res.status(200).send({ token });
     });
   });
@@ -684,7 +684,7 @@ app.post('/admin', (req, res) => {
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
-    connection.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+    connection.query('SELECT * FROM users WHERE nombre = ?', [username], async (err, results) => {
       connection.release();
       if (err) return res.status(500).send(err);
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
