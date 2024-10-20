@@ -700,7 +700,7 @@ app.post('/admin', (req, res) => {
 });
 
 app.post('/register/admin', async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, nombre_negocio } = req.body;
   const role = 'admin';
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -713,7 +713,7 @@ app.post('/register/admin', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      connection.query('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, 'admin'], (err, result) => {
+      connection.query('INSERT INTO usuarios (nombre, email, password, rol, nombre_negocio) VALUES (?, ?, ?, ?, ?)', [username, email, hashedPassword, 'admin', nombre_negocio], (err, result) => {
         if (err) {
           connection.rollback(() => {
             connection.release();
