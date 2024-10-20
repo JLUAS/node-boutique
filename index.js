@@ -1196,92 +1196,132 @@ app.get('/admin/get/payments', async (req, res) => {
 });
 
 app.post('/user/create/new/order', async (req, res) => {
-  const { mesa, producto, cantidad, precioUnitario, entregado, pagado } = req.body;
+  const { ordenes } = req.body;
+  if (!Array.isArray(ordenes) || ordenes.length === 0) {
+    return res.status(400).send('No orders provided');
+  }
+
+  const mesa = ordenes[0].mesa; // Asumiendo que todas las órdenes son para la misma mesa
   const sourceTableName = 'ordenes';
-  const sourceTableMesa = `orden_${mesa}`
+  const sourceTableMesa = `orden_${mesa}`;
+
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
 
-    const checkTableExistsQuery = `SHOW TABLES LIKE '${sourceTableName}'`;
-    connection.query(checkTableExistsQuery, (err, results) => {
+    connection.beginTransaction(err => {
       if (err) {
         connection.release();
         return res.status(500).send(err);
       }
 
-      if (results.length === 0) {
-        const createTableQuery = `CREATE TABLE ${sourceTableName} (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          mesa INT NOT NULL,
-          producto VARCHAR(255) NOT NULL,
-          cantidad INT NOT NULL,
-          precioUnitario INT NOT NULL,
-          entregado VARCHAR(255) NOT NULL,
-          pagado VARCHAR(255) NOT NULL
-        )`;
-        connection.query(createTableQuery, (err) => {
-          if (err) {
+      const checkTableExistsQuery = `SHOW TABLES LIKE '${sourceTableName}'`;
+      connection.query(checkTableExistsQuery, (err, results) => {
+        if (err) {
+          return connection.rollback(() => {
             connection.release();
-            return res.status(500).send(err);
-          }
-          connection.query(`INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ?, ?, ?, ?)`, [mesa, producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
-            connection.release();
-            if (err) {
-              return res.status(500).send(err);
-            }
-            res.status(201).send('Producto añadido y tabla creada');
+            res.status(500).send(err);
           });
-        });
-      } else {
-        connection.query(`INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES (?, ?, ?, ?, ?, ?)`, [mesa, producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
-          connection.release();
-          if (err) {
-            return res.status(500).send(err);
-          }
-          res.status(201).send('Producto añadido');
-        });
-      }
-    });
+        }
 
+        const createOrInsert = () => {
+          const insertQuery = `INSERT INTO ${sourceTableName} (mesa, producto, cantidad, precioUnitario, entregado, pagado) VALUES ?`;
+          const orderValues = ordenes.map(order => [order.mesa, order.producto, order.cantidad, order.precioUnitario, order.entregado, order.pagado]);
 
-    const checkTableMesaExistsQuery = `SHOW TABLES LIKE '${sourceTableMesa}'`;
-    connection.query(checkTableMesaExistsQuery, (err, results) => {
-      if (err) {
-        connection.release();
-        return res.status(500).send(err);
-      }
-
-      if (results.length === 0) {
-        const createTableQuery = `CREATE TABLE ${sourceTableMesa} (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          producto VARCHAR(255) NOT NULL,
-          cantidad INT NOT NULL,
-          precioUnitario INT NOT NULL,
-          entregado VARCHAR(255) NOT NULL,
-          pagado VARCHAR(255) NOT NULL
-        )`;
-        connection.query(createTableQuery, (err) => {
-          if (err) {
-            connection.release();
-            return res.status(500).send(err);
-          }
-          connection.query(`INSERT INTO ${sourceTableMesa} (producto, cantidad, precioUnitario, entregado, pagado) VALUES ( ?, ?, ?, ?, ?)`, [producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
-            connection.release();
+          connection.query(insertQuery, [orderValues], err => {
             if (err) {
-              return res.status(500).send(err);
+              return connection.rollback(() => {
+                connection.release();
+                res.status(500).send(err);
+              });
             }
-            res.status(201).send('Producto añadido y tabla creada');
+
+            const insertMesaQuery = `INSERT INTO ${sourceTableMesa} (producto, cantidad, precioUnitario, entregado, pagado) VALUES ?`;
+            const mesaOrderValues = ordenes.map(order => [order.producto, order.cantidad, order.precioUnitario, order.entregado, order.pagado]);
+
+            connection.query(insertMesaQuery, [mesaOrderValues], err => {
+              if (err) {
+                return connection.rollback(() => {
+                  connection.release();
+                  res.status(500).send(err);
+                });
+              }
+
+              connection.commit(err => {
+                if (err) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    res.status(500).send(err);
+                  });
+                }
+                connection.release();
+                res.status(201).send('Ordenes añadidas');
+              });
+            });
           });
-        });
-      } else {
-        connection.query(`INSERT INTO ${sourceTableMesa} (producto, cantidad, precioUnitario, entregado, pagado) VALUES ( ?, ?, ?, ?, ?)`, [producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
-          connection.release();
-          if (err) {
-            return res.status(500).send(err);
+        };
+
+        const createTableIfNotExists = (tableName, createTableQuery, callback) => {
+          connection.query(`SHOW TABLES LIKE '${tableName}'`, (err, results) => {
+            if (err) {
+              return connection.rollback(() => {
+                connection.release();
+                res.status(500).send(err);
+              });
+            }
+
+            if (results.length === 0) {
+              connection.query(createTableQuery, err => {
+                if (err) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    res.status(500).send(err);
+                  });
+                }
+                callback();
+              });
+            } else {
+              callback();
+            }
+          });
+        };
+
+        createTableIfNotExists(
+          sourceTableName,
+          `CREATE TABLE ${sourceTableName} (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            mesa INT NOT NULL,
+            producto VARCHAR(255) NOT NULL,
+            cantidad INT NOT NULL,
+            precioUnitario INT NOT NULL,
+            entregado VARCHAR(255) NOT NULL,
+            pagado VARCHAR(255) NOT NULL
+          )`,
+          () => {
+            createTableIfNotExists(
+              sourceTableMesa,
+              `CREATE TABLE ${sourceTableMesa} (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                producto VARCHAR(255) NOT NULL,
+                cantidad INT NOT NULL,
+                precioUnitario INT NOT NULL,
+                entregado VARCHAR(255) NOT NULL,
+                pagado VARCHAR(255) NOT NULL
+              )`,
+              () => {
+                connection.query(`DELETE FROM ${sourceTableMesa}`, err => {
+                  if (err) {
+                    return connection.rollback(() => {
+                      connection.release();
+                      res.status(500).send(err);
+                    });
+                  }
+                  createOrInsert();
+                });
+              }
+            );
           }
-          res.status(201).send('Producto añadido');
-        });
-      }
+        );
+      });
     });
   });
 });
@@ -1311,6 +1351,61 @@ app.get('/user/get/orders/mesa', async (req, res) => {
     } else {
       res.status(200).json(results);
     }
+  });
+});
+
+app.put('/user/update/orden/:mesa', async (req, res) => {
+  const {mesa} = req.params;
+  const {producto, cantidad } = req.body
+  
+  const query = `UPDATE ordenes SET cantidad = ? WHERE mesa = ? and producto = ?`;
+
+  pool.query(query, [cantidad ,mesa, producto], (err, result) => {
+    if (err) {
+      console.error('Error updating product:', err);
+      return res.status(500).send('Error updating product');
+    }
+
+    res.status(200).send('Producto actualizado');
+  });
+  const queryMesa = `UPDATE orden_${mesa}  SET cantidad = ? where producto = ?`;
+
+  pool.query(queryMesa, [cantidad , producto], (err, result) => {
+    if (err) {
+      console.error('Error updating product:', err);
+      return res.status(500).send('Error updating product');
+    }
+
+    res.status(200).send('Producto actualizado');
+  });
+});
+
+app.post('/user/insert/orden/:mesa', async (req, res) => {
+  const {mesa} = req.params;
+  const {producto, cantidad, precioUnitario, entregado, pagado } = req.body
+  
+  const query = `INSERT INTO ordenes (mesa, producto, cantidad, precioUnitario, entregado, pagado)
+    VALUES (?, ?, ?, ?, ?, ?)`;
+
+  pool.query(query, [mesa , producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
+    if (err) {
+      console.error('Error updating product:', err);
+      return res.status(500).send('Error updating product');
+    }
+
+    res.status(200).send('Producto actualizado');
+  });
+  
+  const queryMesa = `INSERT INTO orden_${mesa} (producto, cantidad, precioUnitario, entregado, pagado)
+    VALUES (?, ?, ?, ?, ?)`;
+
+  pool.query(queryMesa, [producto, cantidad, precioUnitario, entregado, pagado], (err, result) => {
+    if (err) {
+      console.error('Error updating product:', err);
+      return res.status(500).send('Error updating product');
+    }
+
+    res.status(200).send('Producto actualizado');
   });
 });
 
