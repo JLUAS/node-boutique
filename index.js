@@ -700,7 +700,7 @@ app.post('/admin', (req, res) => {
 });
 
 app.post('/register/admin', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, email, password } = req.body;
   const role = 'admin';
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -713,7 +713,7 @@ app.post('/register/admin', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      connection.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPassword, 'admin'], (err, result) => {
+      connection.query('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, 'admin'], (err, result) => {
         if (err) {
           connection.rollback(() => {
             connection.release();
@@ -738,7 +738,7 @@ app.post('/register/admin', async (req, res) => {
 });
 
 app.post('/register/user', async (req, res) => {
-  const { username, password, baseDeDatos } = req.body;
+  const { username, email, password, baseDeDatos } = req.body;
   const role = 'user';
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -751,7 +751,7 @@ app.post('/register/user', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      connection.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPassword, role], (err, result) => {
+      connection.query('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, role], (err, result) => {
         if (err) {
           connection.rollback(() => {
             connection.release();
