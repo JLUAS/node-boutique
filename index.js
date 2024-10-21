@@ -34,7 +34,12 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.use(bodyParser.json());
-app.use(cors());
+const corsOptions = {
+  origin: 'http://localhost:4200', // Permitir solo este dominio
+  methods: ['GET', 'POST'], // Métodos permitidos
+};
+
+app.use(cors(corsOptions));
 
 const port = process.env.PORT || 3000;
 
