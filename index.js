@@ -39,10 +39,10 @@ app.use(cors());
 const port = process.env.PORT || 3000;
 
 const dbConfig = {
-  host: '50.6.138.161',
-user: 'chamoyav_gestion',
-password: '4G}IU+A(8!@[',
-database: 'chamoyav_gestion',
+  host: process.env.host,
+  user: process.env.user,
+  password: process.env.password,
+  database: process.env.database,
   connectionLimit: 10,
 };
 
@@ -285,7 +285,7 @@ app.post('/login', (req, res) => {
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
-    connection.query('SELECT * FROM users WHERE nombre = ?', [username], async (err, results) => {
+    connection.query('SELECT * FROM usuarios WHERE nombre = ? or email = ?', [username, email], async (err, results) => {
       connection.release();
       if (err) return res.status(500).send(err);
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
