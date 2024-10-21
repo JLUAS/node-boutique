@@ -285,7 +285,7 @@ app.post('/login', (req, res) => {
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
-    connection.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+    connection.query('SELECT * FROM users WHERE nombre = ?', [username], async (err, results) => {
       connection.release();
       if (err) return res.status(500).send(err);
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
@@ -294,7 +294,7 @@ app.post('/login', (req, res) => {
       if (results[0].role !== 'user') {
         return res.status(403).send('Acceso denegado');
       }
-      const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '8h' });
+      const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '74h' });
       res.status(200).send({ token });
     });
   });
@@ -684,7 +684,7 @@ app.post('/admin', (req, res) => {
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
-    connection.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+    connection.query('SELECT * FROM users WHERE nombre = ?', [username], async (err, results) => {
       connection.release();
       if (err) return res.status(500).send(err);
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
@@ -700,7 +700,7 @@ app.post('/admin', (req, res) => {
 });
 
 app.post('/register/admin', async (req, res) => {
-  const { username, password } = req.body;
+  const { nombre, email, password, nombre_negocio, ubicacion, contacto } = req.body;
   const role = 'admin';
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -713,7 +713,7 @@ app.post('/register/admin', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      connection.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPassword, 'admin'], (err, result) => {
+      connection.query('INSERT INTO usuarios (nombre, email, password, rol, nombre_negocio, ubicacion, contacto) VALUES (?, ?, ?, ?, ?, ?, ?)', [nombre, email, hashedPassword, 'admin', nombre_negocio, ubicacion, contacto], (err, result) => {
         if (err) {
           connection.rollback(() => {
             connection.release();
@@ -738,7 +738,7 @@ app.post('/register/admin', async (req, res) => {
 });
 
 app.post('/register/user', async (req, res) => {
-  const { username, password, baseDeDatos } = req.body;
+  const { username, email, password, baseDeDatos } = req.body;
   const role = 'user';
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -751,7 +751,7 @@ app.post('/register/user', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      connection.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPassword, role], (err, result) => {
+      connection.query('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, role], (err, result) => {
         if (err) {
           connection.rollback(() => {
             connection.release();
