@@ -34,20 +34,15 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.use(bodyParser.json());
-const corsOptions = {
-  origin: 'http://localhost:4200', // Permitir solo este dominio
-  methods: ['GET', 'POST'], // Métodos permitidos
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 
 const port = process.env.PORT || 3000;
 
 const dbConfig = {
-  host: process.env.host,
-  user: process.env.user,
-  password: process.env.password,
-  database: process.env.database,
+  host: '50.6.138.161',
+user: 'chamoyav_gestion',
+password: '4G}IU+A(8!@[',
+database: 'chamoyav_gestion',
   connectionLimit: 10,
 };
 
@@ -706,7 +701,7 @@ app.post('/admin', (req, res) => {
 
 app.post('/register/admin', async (req, res) => {
   const { nombre, email, password, nombre_negocio, ubicacion, contacto, rol } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 20);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
@@ -716,15 +711,15 @@ app.post('/register/admin', async (req, res) => {
         connection.release();
         return res.status(500).send(err);
       }
-      Console.LOG(nombre, email, password, nombre_negocio, ubicacion, contacto, rol
-      );
+      console.log('Datos a insertar:', nombre, email, hashedPassword, nombre_negocio, ubicacion, contacto , rol);
       connection.query('INSERT INTO usuarios (nombre,email,password,nombre_negocio,ubicacion,contacto,rol) VALUES (?, ?, ?, ?, ?, ?, ?)', [nombre, email, hashedPassword, nombre_negocio, ubicacion, contacto , rol], (err, result) => {
         if (err) {
+          console.error("Error en la consulta SQL:", err);
           connection.rollback(() => {
-            connection.release();
-            return res.status(500).send(err);
+              connection.release();
+              return res.status(500).send("Error en la base de datos.");
           });
-        } else {
+      }else {
           connection.commit(err => {
             if (err) {
               connection.rollback(() => {
