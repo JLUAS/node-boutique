@@ -700,8 +700,7 @@ app.post('/admin', (req, res) => {
 });
 
 app.post('/register/admin', async (req, res) => {
-  const { nombre, email, password, nombre_negocio, ubicacion, contacto } = req.body;
-  const rol = 'admin';
+  const { nombre, email, password, nombre_negocio, ubicacion, contacto, rol } = req.body;
   const hashedPassword = await bcrypt.hash(password, 20);
 
   pool.getConnection((err, connection) => {
