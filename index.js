@@ -684,7 +684,7 @@ app.post('/admin', (req, res) => {
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
-    connection.query('SELECT * FROM users WHERE nombre = ?', [username], async (err, results) => {
+    connection.query('SELECT * FROM usuarios WHERE nombre = ? or email = ?', [username, username], async (err, results) => {
       connection.release();
       if (err) return res.status(500).send(err);
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
