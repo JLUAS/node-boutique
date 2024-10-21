@@ -690,10 +690,11 @@ app.post('/admin', (req, res) => {
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
         return res.status(401).send('Nombre de usuario o contraseña incorrecta');
       }
-      if (results[0].role !== 'admin') {
+      console.log(results[0].rol);
+      if (results[0].rol !== 'admin') {
         return res.status(403).send('Acceso denegado');
       }
-      const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '8h' });
+      const token = jwt.sign({ id: results[0].id, rol: results[0].rol }, 'secretkey', { expiresIn: '8h' });
       res.status(200).send({ token });
     });
   });
