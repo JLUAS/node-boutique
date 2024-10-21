@@ -716,7 +716,8 @@ app.post('/register/admin', async (req, res) => {
         connection.release();
         return res.status(500).send(err);
       }
-
+      Console.LOG(nombre, email, password, nombre_negocio, ubicacion, contacto, rol
+      );
       connection.query('INSERT INTO usuarios (nombre,email,password,nombre_negocio,ubicacion,contacto,rol) VALUES (?, ?, ?, ?, ?, ?, ?)', [nombre, email, hashedPassword, nombre_negocio, ubicacion, contacto , rol], (err, result) => {
         if (err) {
           connection.rollback(() => {
