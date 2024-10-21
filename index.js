@@ -291,10 +291,10 @@ app.post('/login', (req, res) => {
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
         return res.status(401).send('Nombre de usuario o contraseña incorrecta');
       }
-      if (results[0].role !== 'user') {
+      if (results[0].rol !== 'user') {
         return res.status(403).send('Acceso denegado');
       }
-      const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '74h' });
+      const token = jwt.sign({ id: results[0].id, rol: results[0].rol }, 'secretkey', { expiresIn: '74h' });
       res.status(200).send({ token });
     });
   });
@@ -664,7 +664,7 @@ app.put('/inventoryUser/:base/:rank/:username', (req, res) => {
 
 // Punto de venta
 app.get('/users', (req, res) => {
-  const sql = `SELECT id, username, role FROM users`;
+  const sql = `SELECT id, username, rol FROM users`;
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
     connection.query(sql, (err, results) => {
