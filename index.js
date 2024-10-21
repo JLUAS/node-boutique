@@ -739,8 +739,7 @@ app.post('/register/admin', async (req, res) => {
 });
 
 app.post('/register/user', async (req, res) => {
-  const { username, email, password, baseDeDatos } = req.body;
-  const role = 'user';
+  const { nombre, email, password, nombre_negocio, ubicacion, contacto, rol } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
 
   pool.getConnection((err, connection) => {
@@ -752,7 +751,7 @@ app.post('/register/user', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      connection.query('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, role], (err, result) => {
+      connection.query('INSERT INTO usuarios (nombre,email,password,nombre_negocio,ubicacion,contacto,rol) VALUES (?, ?, ?, ?, ?, ?, ?)', [nombre, email, hashedPassword, nombre_negocio, ubicacion, contacto , rol], (err, result) => {
         if (err) {
           connection.rollback(() => {
             connection.release();
