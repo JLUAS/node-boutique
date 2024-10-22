@@ -1003,7 +1003,7 @@ app.put('/admin/update/user/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
-
+  console.log(nombre, password, id)
   const query = `UPDATE usuarios SET password = ?  WHERE id = ?`;
 
   pool.query(query, [hashedPassword, id], (err, result) => {
