@@ -894,8 +894,8 @@ app.post('/admin/create/category', async (req, res) => {
   });
 });
 
-app.get('/admin/get/categories', async (req, res) => {
-  const query = 'SELECT categoria FROM categorias';
+app.get('/admin/get/rol', async (req, res) => {
+  const query = 'SELECT rol FROM usuarios';
 
   pool.query(query, (err, results) => {
     if (err) {
