@@ -999,13 +999,14 @@ app.get('/admin/get/products/category', async (req, res) => {
   });
 });
 
-app.put('/admin/update/product/:id', async (req, res) => {
+app.put('/admin/update/user/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, precio, categoria, estado } = req.body;
+  const { nombre, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  const query = `UPDATE productos SET nombre = ?, precio = ?, categoria = ?, estado = ? WHERE id = ?`;
+  const query = `UPDATE usuarios SET password = ?  WHERE id = ?`;
 
-  pool.query(query, [nombre, precio, categoria, estado, id], (err, result) => {
+  pool.query(query, [hashedPassword, id], (err, result) => {
     if (err) {
       console.error('Error updating product:', err);
       return res.status(500).send('Error updating product');
