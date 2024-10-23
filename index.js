@@ -1017,6 +1017,23 @@ app.get('/admin/get/users/rol', async (req, res) => {
 });
 
 
+app.get('/admin/get/users/rol/super', async (req, res) => {
+  const { categoria } = req.query;
+
+  let query = 'SELECT * FROM usuarios WHERE rol = ? ;';
+  let queryParams = [categoria ];
+
+  pool.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Error fetching products:', err);
+      res.status(500).send('Error fetching products');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
+
 app.get('/admin/get/users', async (req, res) => {
   const { categoria, username } = req.query;
 
