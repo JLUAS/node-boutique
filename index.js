@@ -1002,7 +1002,7 @@ app.get('/user/get/products', async (req, res) => {
 app.get('/admin/get/users/rol', async (req, res) => {
   const { categoria, username } = req.query;
 
-  let query = 'SELECT * FROM usuarios WHERE rol = ? AND nombre_negocio = (SELECT nombre_negocio FROM usuarios WHERE nombre = ?)';
+  let query = 'SELECT * FROM usuarios WHERE rol = ? AND nombre_negocio = (SELECT nombre_negocio FROM usuarios WHERE nombre = ? LIMIT 1)LIMIT 0, 25;';
   let queryParams = [categoria, username ];
 
   pool.query(query, queryParams, (err, results) => {
@@ -1019,7 +1019,7 @@ app.get('/admin/get/users/rol', async (req, res) => {
 app.get('/admin/get/users', async (req, res) => {
   const { categoria, username } = req.query;
 
-  let query = "SELECT * FROM usuarios where (rol = 'user' OR rol = 'admin') AND nombre_negocio = (SELECT nombre_negocio FROM usuarios WHERE nombre = ?) ";
+  let query = "SELECT * FROM usuarios where (rol = 'user' OR rol = 'admin') AND nombre_negocio = (SELECT nombre_negocio FROM usuarios WHERE nombre = ? LIMIT 1)LIMIT 0, 25 ";
   let queryParams = [categoria, username];
 
   pool.query(query, queryParams, (err, results) => {
