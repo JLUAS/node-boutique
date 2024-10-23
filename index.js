@@ -693,7 +693,7 @@ app.post('/admin', (req, res) => {
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
         return res.status(401).send('Nombre de usuario o contraseña incorrecta');
       }
-      if (results[0].rol == 'super' 
+      if (results[0].rol == 'admin' 
       ) {
         return res.status(403).send('Acceso denegado');
       }
