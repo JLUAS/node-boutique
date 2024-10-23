@@ -898,7 +898,7 @@ app.post('/admin/create/category', async (req, res) => {
 });
 
 app.get('/admin/get/rol', async (req, res) => {
-  const query = "SELECT rol FROM usuarios WHERE rol = 'user' OR rol = 'admin'";
+  const query = "SELECT DISTINCT rol FROM usuarios WHERE rol = 'user' OR rol = 'admin'";
 
   pool.query(query, (err, results) => {
     if (err) {
@@ -909,6 +909,7 @@ app.get('/admin/get/rol', async (req, res) => {
     }
   });
 });
+
 
 app.get('/admin/get/rol/super', async (req, res) => {
   const query = 'SELECT rol FROM usuarios';
