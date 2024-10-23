@@ -691,10 +691,10 @@ app.post('/admin', (req, res) => {
         return res.status(401).send('Nombre de usuario o contraseña incorrecta');
       }
       console.log(results[0].rol);
-      if (results[0].rol !== 'admin') {
+      if (results[0].rol !== 'super') {
         return res.status(403).send('Acceso denegado');
       }
-      const token = jwt.sign({ id: results[0].id, rol: results[0].rol }, 'secretkey', { expiresIn: '72h' });
+      const token = jwt.sign({ id: results[0].id, rol: results[0].rol }, 'secretkey', { expiresIn: '8h' });
       res.status(200).send({ token });
     });
   });
