@@ -687,14 +687,11 @@ app.post('/admin', (req, res) => {
     connection.query('SELECT * FROM usuarios WHERE nombre = ? or email = ?', [username, username], async (err, results) => {
       connection.release();
       if (err) return res.status(500).send(err);
-      console.log(results[0].password);
-      const hashedPassword = await bcrypt.hash(password, 10);
-      console.log(hashedPassword);
-      if (!results.length ) {
+      if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
         return res.status(401).send('Nombre de usuario o contraseña incorrecta');
       }
-      if (results[0].rol == 'admin' 
-      ) {
+      console.log(results[0].rol);
+      if (results[0].rol !== 'admin') {
         return res.status(403).send('Acceso denegado');
       }
       const token = jwt.sign({ id: results[0].id, rol: results[0].rol }, 'secretkey', { expiresIn: '8h' });
