@@ -1048,6 +1048,24 @@ app.get('/admin/get/users/super', async (req, res) => {
   });
 });
 
+
+app.get('/admin/get/users/business', async (req, res) => {
+  const { business } = req.query;
+
+  let query = 'SELECT nombre_negocio FROM usuarios where nombre = ?';
+  let queryParams = business;
+
+  pool.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Error fetching business name:', err);
+      res.status(500).send('Error fetching business name');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
+
 app.put('/admin/update/user/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, password } = req.body;
