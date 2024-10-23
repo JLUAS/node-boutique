@@ -690,7 +690,7 @@ app.post('/admin', (req, res) => {
       console.log(results[0].password);
       const hashedPassword = await bcrypt.hash(password, 10);
       console.log(hashedPassword);
-      if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
+      if (!results.length ) {
         return res.status(401).send('Nombre de usuario o contraseña incorrecta');
       }
       if (results[0].rol == 'admin' 
