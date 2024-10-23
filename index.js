@@ -898,6 +898,19 @@ app.post('/admin/create/category', async (req, res) => {
 });
 
 app.get('/admin/get/rol', async (req, res) => {
+  const query = "SELECT rol FROM usuarios WHERE rol = 'user' OR rol = 'admin'";
+
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching roles:', err);
+      res.status(500).send('Error fetching roles');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
+app.get('/admin/get/rol/super', async (req, res) => {
   const query = 'SELECT rol FROM usuarios';
 
   pool.query(query, (err, results) => {
@@ -987,10 +1000,10 @@ app.get('/user/get/products', async (req, res) => {
 });
 //Obtener usuarios por rol
 app.get('/admin/get/users/rol', async (req, res) => {
-  const { categoria } = req.query;
+  const { categoria, username } = req.query;
 
-  let query = 'SELECT * FROM usuarios WHERE rol = ?';
-  let queryParams = categoria;
+  let query = 'SELECT * FROM usuarios WHERE rol = ? AND nombre_negocio = (SELECT nombre_negocio FROM usuarios WHERE nombre = ?)';
+  let queryParams = [categoria, username ];
 
   pool.query(query, queryParams, (err, results) => {
     if (err) {
@@ -1002,7 +1015,24 @@ app.get('/admin/get/users/rol', async (req, res) => {
   });
 });
 
+
 app.get('/admin/get/users', async (req, res) => {
+  const { categoria, username } = req.query;
+
+  let query = "SELECT * FROM usuarios where (rol = 'user' OR rol = 'admin') AND nombre_negocio = (SELECT nombre_negocio FROM usuarios WHERE nombre = ?) ";
+  let queryParams = [categoria, username];
+
+  pool.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Error fetching products:', err);
+      res.status(500).send('Error fetching products');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
+app.get('/admin/get/users/super', async (req, res) => {
   const { categoria } = req.query;
 
   let query = 'SELECT * FROM usuarios';
