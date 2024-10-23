@@ -912,7 +912,7 @@ app.get('/admin/get/rol', async (req, res) => {
 
 
 app.get('/admin/get/rol/super', async (req, res) => {
-  const query = 'SELECT rol FROM usuarios';
+  const query = 'SELECT DISTINCT rol FROM usuarios';
 
   pool.query(query, (err, results) => {
     if (err) {
@@ -1082,6 +1082,9 @@ app.put('/admin/update/user/:id', async (req, res) => {
 
     res.status(200).send('Producto actualizado');
   });
+
+
+
 });
 
 app.post('/admin/create/mesa', async (req, res) => {
