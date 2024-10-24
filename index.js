@@ -1068,15 +1068,31 @@ app.get('/admin/get/users/super', async (req, res) => {
 
 
 app.get('/admin/get/users/business', async (req, res) => {
-  const { business } = req.query;
+  const { nombre } = req.query;
 
   let query = 'SELECT nombre_negocio FROM usuarios where nombre = ?';
-  let queryParams = business;
+  let queryParams = nombre;
 
   pool.query(query, queryParams, (err, results) => {
     if (err) {
       console.error('Error fetching business name:', err);
       res.status(500).send('Error fetching business name');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
+app.get('/admin/get/users/ubicacion', async (req, res) => {
+  const { nombre } = req.query;
+
+  let query = 'SELECT ubicacion FROM usuarios where nombre = ?';
+  let queryParams = nombre;
+
+  pool.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Error fetching ubicacion name:', err);
+      res.status(500).send('Error fetching ubicacion name');
     } else {
       res.status(200).json(results);
     }
