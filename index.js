@@ -1492,8 +1492,35 @@ function insertPdf(filePath) {
   });
 }
 // Insertar el PDF llamando a la función
-const filePath = './PROPUESTA-SITIO WEB.pdf';
-insertPdf(filePath);
+// const filePath = './PROPUESTA-SITIO WEB.pdf';
+// insertPdf(filePath);
+
+// Endpoint para descargar el archivo PDF usando su ID
+app.get('/download/:id', (req, res) => {
+  const fileId = req.params.id;
+
+  // Consulta SQL para obtener el archivo PDF por ID
+  const query = 'SELECT name, data FROM pdf_files WHERE id = 1';
+  pool.query(query, [fileId], (err, results) => {
+    if (err) {
+      console.error('Error al recuperar el archivo de la base de datos:', err);
+      return res.status(500).send('Error al obtener el archivo');
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send('Archivo no encontrado');
+    }
+
+    const file = results[0];
+
+    // Configurar encabezados para que el archivo se descargue como PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=${file.name}`);
+    
+    // Enviar el archivo PDF como respuesta
+    res.send(file.data);
+  });
+});
 
 
 
