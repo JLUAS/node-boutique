@@ -1470,6 +1470,33 @@ app.post('/user/insert/orden/:mesa', async (req, res) => {
   });
 });
 
+// Función para insertar el PDF en la base de datos
+function insertPdf(filePath) {
+  // Leer el archivo PDF
+  fs.readFile(filePath, (err, data) => {
+      if (err) {
+          return console.error('Error al leer el archivo PDF: ' + err.message);
+      }
+
+      // Preparar la consulta SQL
+      const query = 'INSERT INTO pdf_files (name, data) VALUES (?, ?)';
+      const values = [path.basename(filePath), data];
+
+      // Ejecutar la consulta
+      connection.query(query, values, (err, results) => {
+          if (err) {
+              return console.error('Error al insertar el PDF en la base de datos: ' + err.message);
+          }
+          console.log('PDF insertado con éxito. ID:', results.insertId);
+      });
+  });
+}
+// Insertar el PDF llamando a la función
+const filePath = './PROPUESTA-SITIO WEB.pdf';
+insertPdf(filePath);
+
+
+
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
