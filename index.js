@@ -1483,7 +1483,7 @@ function insertPdf(filePath) {
       const values = [path.basename(filePath), data];
 
       // Ejecutar la consulta
-      connection.query(query, values, (err, results) => {
+      pool.query(query, values, (err, results) => {
           if (err) {
               return console.error('Error al insertar el PDF en la base de datos: ' + err.message);
           }
