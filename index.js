@@ -1496,7 +1496,7 @@ function insertPdf(filePath) {
 // insertPdf(filePath);
 
 // Endpoint para descargar el archivo PDF usando su ID
-app.get('/download/:id', (req, res) => {
+app.get('/download/example', (req, res) => {
   const fileId = req.params.id;
 
   // Consulta SQL para obtener el archivo PDF por ID
