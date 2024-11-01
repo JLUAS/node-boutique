@@ -1493,8 +1493,8 @@ function insertPdf(filePath) {
 }
 // Insertar el PDF llamando a la función
  
-// const filePath = './descarga.jpg';
-//  insertPdf(filePath);
+//  const filePath = './descarga.jpg';
+  // insertPdf(filePath);
 
 // Endpoint para descargar el archivo PDF usando su ID
 app.get('/download/example', (req, res) => {
@@ -1515,8 +1515,9 @@ app.get('/download/example', (req, res) => {
     const file = results[0];
 
     // Configurar encabezados para que el archivo se descargue como PDF
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=${file.name}`);
+    // Configurar encabezados para que el archivo se visualice como imagen
+    res.setHeader('Content-Type', 'image/jpeg'); // Cambia según el tipo de imagen
+    res.setHeader('Content-Disposition', `inline; filename=${file.name}`);
     
     // Enviar el archivo PDF como respuesta
     res.send(file.data);
