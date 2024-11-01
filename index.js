@@ -1492,15 +1492,16 @@ function insertPdf(filePath) {
   });
 }
 // Insertar el PDF llamando a la función
-// const filePath = './PROPUESTA-SITIO WEB.pdf';
-// insertPdf(filePath);
+ 
+// const filePath = './descarga.jpg';
+//  insertPdf(filePath);
 
 // Endpoint para descargar el archivo PDF usando su ID
 app.get('/download/example', (req, res) => {
   const fileId = req.params.id;
 
   // Consulta SQL para obtener el archivo PDF por ID
-  const query = 'SELECT name, data FROM pdf_files WHERE id = 1';
+  const query = 'SELECT name, data FROM pdf_files WHERE id = 2';
   pool.query(query, [fileId], (err, results) => {
     if (err) {
       console.error('Error al recuperar el archivo de la base de datos:', err);
