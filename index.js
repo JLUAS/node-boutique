@@ -20,10 +20,10 @@ const app = express();
 const memoryStorage = multer.memoryStorage();
 
 // Configuración del almacenamiento en disco
-const publicDir = path.join(__dirname, 'public/uploads'); // Define el directorio de destino para las imágenes
-// Crear el directorio `public` si no existe
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir);
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+// Verificar si el directorio de uploads existe; si no, crearlo
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 const diskStorage = multer.diskStorage({
   destination: function (req, file, cb) {
