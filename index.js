@@ -10,28 +10,38 @@ const XlsxPopulate = require('xlsx-populate');
 const path = require('path');
 const fs = require('fs');
 
+// Configuración de multer para almacenar el archivo en memoria
 dotenv.config({ path: './db.env' });
 
 const app = express();
 
+
+// Configuración del almacenamiento en memoria
+const memoryStorage = multer.memoryStorage();
+
+// Configuración del almacenamiento en disco
+const publicDir = path.join(__dirname, 'public/uploads'); // Define el directorio de destino para las imágenes
 // Crear el directorio `public` si no existe
-const publicDir = path.join(__dirname, 'public');
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir);
 }
-
-const storage = multer.diskStorage({
+const diskStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, publicDir);
+  },
   filename: function (req, file, cb) {
     const ext = file.originalname.split(".").pop();
     const fileName = Date.now();
     cb(null, `${fileName}.${ext}`);
-  },
-  destination: function (req, file, cb) {
-    cb(null, publicDir);
-  },
+  }
 });
 
-const upload = multer({ storage: storage });
+// Inicializa las dos instancias de `multer` con las diferentes configuraciones de almacenamiento
+const uploadToMemory = multer({ storage: memoryStorage });
+const uploadToDisk = multer({ storage: diskStorage });
+
+
+
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -78,207 +88,207 @@ function handleDisconnect() {
 
 handleDisconnect();
 
-app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
-  const baseDeDatos = req.body.tableName;
-  const tableName = `baseDeDatos_${baseDeDatos}`;
+// app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
+//   const baseDeDatos = req.body.tableName;
+//   const tableName = `baseDeDatos_${baseDeDatos}`;
 
-  const filePath = path.join(publicDir, req.file.filename);
-  try {
-    const workbook = await XlsxPopulate.fromFileAsync(filePath);
-    const sheet = workbook.sheet(0);
-    const usedRange = sheet.usedRange();
-    const data = usedRange.value();
-    const headers = data[0].map(header => `\`${header}\``);
+//   const filePath = path.join(publicDir, req.file.filename);
+//   try {
+//     const workbook = await XlsxPopulate.fromFileAsync(filePath);
+//     const sheet = workbook.sheet(0);
+//     const usedRange = sheet.usedRange();
+//     const data = usedRange.value();
+//     const headers = data[0].map(header => `\`${header}\``);
 
-    const tableSchema = `
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      marca VARCHAR(255),
-      rank VARCHAR(255),
-      presentacion VARCHAR(255),
-      distribucion_tiendas VARCHAR(255),
-      frentes VARCHAR(255),
-      vol_ytd FLOAT,
-      ccc VARCHAR(255),
-      peakday_units FLOAT,
-      facings_minimos_pd FLOAT,
-      ros FLOAT,
-      avail3m FLOAT,
-      avail_plaza_oxxo FLOAT,
-      volume_mix VARCHAR(255),
-      industry_packtype VARCHAR(255),
-      percent_availab FLOAT,
-      mix_ros FLOAT,
-      atw FLOAT,
-      ajustes_frentes_minimos FLOAT
-    `;
+//     const tableSchema = `
+//       id INT AUTO_INCREMENT PRIMARY KEY,
+//       marca VARCHAR(255),
+//       rank VARCHAR(255),
+//       presentacion VARCHAR(255),
+//       distribucion_tiendas VARCHAR(255),
+//       frentes VARCHAR(255),
+//       vol_ytd FLOAT,
+//       ccc VARCHAR(255),
+//       peakday_units FLOAT,
+//       facings_minimos_pd FLOAT,
+//       ros FLOAT,
+//       avail3m FLOAT,
+//       avail_plaza_oxxo FLOAT,
+//       volume_mix VARCHAR(255),
+//       industry_packtype VARCHAR(255),
+//       percent_availab FLOAT,
+//       mix_ros FLOAT,
+//       atw FLOAT,
+//       ajustes_frentes_minimos FLOAT
+//     `;
 
-    const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
-    const tableExists = await new Promise((resolve, reject) => {
-      pool.query(tableExistsQuery, (err, results) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(results.length > 0);
-        }
-      });
-    });
+//     const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
+//     const tableExists = await new Promise((resolve, reject) => {
+//       pool.query(tableExistsQuery, (err, results) => {
+//         if (err) {
+//           reject(err);
+//         } else {
+//           resolve(results.length > 0);
+//         }
+//       });
+//     });
 
-    if (!tableExists) {
-      const createTableQuery = `CREATE TABLE ${tableName} (${tableSchema})`;
-      await new Promise((resolve, reject) => {
-        pool.query(createTableQuery, (err, result) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(result);
-          }
-        });
-      });
+//     if (!tableExists) {
+//       const createTableQuery = `CREATE TABLE ${tableName} (${tableSchema})`;
+//       await new Promise((resolve, reject) => {
+//         pool.query(createTableQuery, (err, result) => {
+//           if (err) {
+//             reject(err);
+//           } else {
+//             resolve(result);
+//           }
+//         });
+//       });
 
-      const insertDatabaseNameQuery = `INSERT INTO bases_datos (nombre_base_datos) VALUES (?)`;
-      await new Promise((resolve, reject) => {
-        pool.query(insertDatabaseNameQuery, [baseDeDatos], (err, result) => {
-          if (err) {
-            console.error('Error inserting database name:', err);
-            reject(err);
-          } else {
-            console.log('Database name inserted');
-            resolve(result);
-          }
-        });
-      });
-    }
+//       const insertDatabaseNameQuery = `INSERT INTO bases_datos (nombre_base_datos) VALUES (?)`;
+//       await new Promise((resolve, reject) => {
+//         pool.query(insertDatabaseNameQuery, [baseDeDatos], (err, result) => {
+//           if (err) {
+//             console.error('Error inserting database name:', err);
+//             reject(err);
+//           } else {
+//             console.log('Database name inserted');
+//             resolve(result);
+//           }
+//         });
+//       });
+//     }
 
-    await new Promise((resolve, reject) => {
-      pool.query(`DELETE FROM ${tableName}`, (err, result) => {
-        if (err) {
-          console.error('Error deleting existing records:', err);
-          reject(err);
-        } else {
-          console.log('Existing records deleted');
-          resolve(result);
-        }
-      });
-    });
+//     await new Promise((resolve, reject) => {
+//       pool.query(`DELETE FROM ${tableName}`, (err, result) => {
+//         if (err) {
+//           console.error('Error deleting existing records:', err);
+//           reject(err);
+//         } else {
+//           console.log('Existing records deleted');
+//           resolve(result);
+//         }
+//       });
+//     });
 
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const query = `INSERT INTO ${tableName} (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
-      await new Promise((resolve, reject) => {
-        pool.query(query, row, (err, result) => {
-          if (err) {
-            console.error(`Error inserting row ${i}:`, err);
-            reject(err);
-          } else {
-            resolve(result);
-          }
-        });
-      });
-    }
+//     for (let i = 1; i < data.length; i++) {
+//       const row = data[i];
+//       const query = `INSERT INTO ${tableName} (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
+//       await new Promise((resolve, reject) => {
+//         pool.query(query, row, (err, result) => {
+//           if (err) {
+//             console.error(`Error inserting row ${i}:`, err);
+//             reject(err);
+//           } else {
+//             resolve(result);
+//           }
+//         });
+//       });
+//     }
 
-    res.status(200).send('File processed successfully');
-  } catch (error) {
-    console.error('Error processing file:', error);
-    res.status(500).send('Error processing file');
-  }
-});
+//     res.status(200).send('File processed successfully');
+//   } catch (error) {
+//     console.error('Error processing file:', error);
+//     res.status(500).send('Error processing file');
+//   }
+// });
 
-app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) => {
-  const baseDeDatos = req.body.tableName;
-  const tableName = `planograma_${baseDeDatos}`;
+// app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) => {
+//   const baseDeDatos = req.body.tableName;
+//   const tableName = `planograma_${baseDeDatos}`;
 
-  const filePath = path.join(publicDir, req.file.filename);
-  try {
-    const workbook = await XlsxPopulate.fromFileAsync(filePath);
-    const sheet = workbook.sheet(0);
-    const usedRange = sheet.usedRange();
-    const data = usedRange.value();
-    const headers = data[0].map(header => `\`${header}\``);
+//   const filePath = path.join(publicDir, req.file.filename);
+//   try {
+//     const workbook = await XlsxPopulate.fromFileAsync(filePath);
+//     const sheet = workbook.sheet(0);
+//     const usedRange = sheet.usedRange();
+//     const data = usedRange.value();
+//     const headers = data[0].map(header => `\`${header}\``);
 
-    const tableSchema = `
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      frente FLOAT,
-      datos_planograma FLOAT,
-      frentes_totales FLOAT,
-      parrillas FLOAT,
-      planograma FLOAT,
-      skus FLOAT,
-      volumen FLOAT,
-      parrillas_admin FLOAT,
-      degradado FLOAT,
-      espacio FLOAT
-    `;
+//     const tableSchema = `
+//       id INT AUTO_INCREMENT PRIMARY KEY,
+//       frente FLOAT,
+//       datos_planograma FLOAT,
+//       frentes_totales FLOAT,
+//       parrillas FLOAT,
+//       planograma FLOAT,
+//       skus FLOAT,
+//       volumen FLOAT,
+//       parrillas_admin FLOAT,
+//       degradado FLOAT,
+//       espacio FLOAT
+//     `;
 
-    const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
-    const tableExists = await new Promise((resolve, reject) => {
-      pool.query(tableExistsQuery, (err, results) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(results.length > 0);
-        }
-      });
-    });
+//     const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
+//     const tableExists = await new Promise((resolve, reject) => {
+//       pool.query(tableExistsQuery, (err, results) => {
+//         if (err) {
+//           reject(err);
+//         } else {
+//           resolve(results.length > 0);
+//         }
+//       });
+//     });
 
-    if (!tableExists) {
-      const createTableQuery = `CREATE TABLE ${tableName} (${tableSchema})`;
-      await new Promise((resolve, reject) => {
-        pool.query(createTableQuery, (err, result) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(result);
-          }
-        });
-      });
+//     if (!tableExists) {
+//       const createTableQuery = `CREATE TABLE ${tableName} (${tableSchema})`;
+//       await new Promise((resolve, reject) => {
+//         pool.query(createTableQuery, (err, result) => {
+//           if (err) {
+//             reject(err);
+//           } else {
+//             resolve(result);
+//           }
+//         });
+//       });
 
-      const insertDatabaseNameQuery = `INSERT INTO bases_planograma (nombre_planograma) VALUES (?)`;
-      await new Promise((resolve, reject) => {
-        pool.query(insertDatabaseNameQuery, [baseDeDatos], (err, result) => {
-          if (err) {
-            console.error('Error inserting database name:', err);
-            reject(err);
-          } else {
-            console.log('Database name inserted');
-            resolve(result);
-          }
-        });
-      });
-    }
+//       const insertDatabaseNameQuery = `INSERT INTO bases_planograma (nombre_planograma) VALUES (?)`;
+//       await new Promise((resolve, reject) => {
+//         pool.query(insertDatabaseNameQuery, [baseDeDatos], (err, result) => {
+//           if (err) {
+//             console.error('Error inserting database name:', err);
+//             reject(err);
+//           } else {
+//             console.log('Database name inserted');
+//             resolve(result);
+//           }
+//         });
+//       });
+//     }
 
-    await new Promise((resolve, reject) => {
-      pool.query(`DELETE FROM ${tableName}`, (err, result) => {
-        if (err) {
-          console.error('Error deleting existing records:', err);
-          reject(err);
-        } else {
-          console.log('Existing records deleted');
-          resolve(result);
-        }
-      });
-    });
+//     await new Promise((resolve, reject) => {
+//       pool.query(`DELETE FROM ${tableName}`, (err, result) => {
+//         if (err) {
+//           console.error('Error deleting existing records:', err);
+//           reject(err);
+//         } else {
+//           console.log('Existing records deleted');
+//           resolve(result);
+//         }
+//       });
+//     });
 
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const query = `INSERT INTO ${tableName} (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
-      await new Promise((resolve, reject) => {
-        pool.query(query, row, (err, result) => {
-          if (err) {
-            console.error(`Error inserting row ${i}:`, err);
-            reject(err);
-          } else {
-            resolve(result);
-          }
-        });
-      });
-    }
+//     for (let i = 1; i < data.length; i++) {
+//       const row = data[i];
+//       const query = `INSERT INTO ${tableName} (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
+//       await new Promise((resolve, reject) => {
+//         pool.query(query, row, (err, result) => {
+//           if (err) {
+//             console.error(`Error inserting row ${i}:`, err);
+//             reject(err);
+//           } else {
+//             resolve(result);
+//           }
+//         });
+//       });
+//     }
 
-    res.status(200).send('File processed successfully');
-  } catch (error) {
-    console.error('Error processing file:', error);
-    res.status(500).send('Error processing file');
-  }
-});
+//     res.status(200).send('File processed successfully');
+//   } catch (error) {
+//     console.error('Error processing file:', error);
+//     res.status(500).send('Error processing file');
+//   }
+// });
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
@@ -924,34 +934,6 @@ app.get('/admin/get/rol/super', async (req, res) => {
   });
 });
 
-app.post('/admin/create/product', async (req, res) => {
-  const { nombre, precio, categoria, estado, descripcion, nombre_negocio } = req.body;
-  const sourceTableName = 'productos';
-
-  // Si la imagen es un archivo, verifica que venga en el body como un buffer o base64
-  let imagen = null;
-  if (req.files && req.files.imagen) {
-    imagen = req.files.imagen.data; // Asume que estás usando un middleware como express-fileupload
-  }
-
-  pool.getConnection((err, connection) => {
-    if (err) return res.status(500).send('Error al conectar con la base de datos');
-
-    const query = `INSERT INTO ${sourceTableName} (nombre, precio, categoria, estado, descripcion, imagen, nombre_negocio) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    const values = [nombre, precio, categoria, estado, descripcion, imagen, nombre_negocio];
-
-    connection.query(query, values, (err, result) => {
-      connection.release();
-      if (err) {
-        console.error('Error al insertar el producto:', err);
-        return res.status(500).send('Error al añadir el producto');
-      }
-      res.status(201).send('Producto añadido exitosamente');
-    });
-  });
-});
-
-
 // app.get('/admin/get/products', async (req, res) => {
 //   const query = 'SELECT * FROM productos';
 
@@ -1450,6 +1432,20 @@ app.post('/user/insert/orden/:mesa', async (req, res) => {
   });
 });
 
+// Endpoint to handle image upload
+app.post('/admin/create/product', uploadToMemory.single('imagen'), (req, res) => {
+  const image = req.file.buffer.toString('base64'); // Convert image to base64
+  const query = 'INSERT INTO Producto (imagen) VALUES (?)';
+
+  pool.query(query, [image], (err, result) => {
+    if (err) {
+      res.status(500).send('Error saving image');
+    } else {
+      res.status(200).send('Image uploaded successfully');
+    }
+  });
+});
+
 // Función para insertar el PDF en la base de datos
 function insertPdf(filePath) {
   // Leer el archivo PDF
@@ -1481,8 +1477,8 @@ app.get('/download/example', (req, res) => {
   const fileId = req.params.id;
 
   // Consulta SQL para obtener el archivo PDF por ID
-  const query = 'SELECT name, data FROM pdf_files WHERE id = 2';
-  pool.query(query, [fileId], (err, results) => {
+  const query = 'SELECT imagen FROM Producto WHERE id = 2';
+  pool.query(query, (err, results) => {
     if (err) {
       console.error('Error al recuperar el archivo de la base de datos:', err);
       return res.status(500).send('Error al obtener el archivo');
