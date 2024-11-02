@@ -925,52 +925,32 @@ app.get('/admin/get/rol/super', async (req, res) => {
 });
 
 app.post('/admin/create/product', async (req, res) => {
-  const { nombre, precio, categoria, estado } = req.body;
+  const { nombre, precio, categoria, estado, descripcion, nombre_negocio } = req.body;
   const sourceTableName = 'productos';
 
+  // Si la imagen es un archivo, verifica que venga en el body como un buffer o base64
+  let imagen = null;
+  if (req.files && req.files.imagen) {
+    imagen = req.files.imagen.data; // Asume que estás usando un middleware como express-fileupload
+  }
+
   pool.getConnection((err, connection) => {
-    if (err) return res.status(500).send(err);
+    if (err) return res.status(500).send('Error al conectar con la base de datos');
 
-    const checkTableExistsQuery = `SHOW TABLES LIKE '${sourceTableName}'`;
-    connection.query(checkTableExistsQuery, (err, results) => {
+    const query = `INSERT INTO ${sourceTableName} (nombre, precio, categoria, estado, descripcion, imagen, nombre_negocio) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const values = [nombre, precio, categoria, estado, descripcion, imagen, nombre_negocio];
+
+    connection.query(query, values, (err, result) => {
+      connection.release();
       if (err) {
-        connection.release();
-        return res.status(500).send(err);
+        console.error('Error al insertar el producto:', err);
+        return res.status(500).send('Error al añadir el producto');
       }
-
-      if (results.length === 0) {
-        const createTableQuery = `CREATE TABLE ${sourceTableName} (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          nombre VARCHAR(255) NOT NULL,
-          precio INT NOT NULL,
-          categoria VARCHAR(255) NOT NULL,
-          estado VARCHAR(255) NOT NULL
-        )`;
-        connection.query(createTableQuery, (err) => {
-          if (err) {
-            connection.release();
-            return res.status(500).send(err);
-          }
-          connection.query(`INSERT INTO ${sourceTableName} (nombre, precio, categoria, estado) VALUES (?, ?, ?, ?)`, [nombre, precio, categoria, estado], (err, result) => {
-            connection.release();
-            if (err) {
-              return res.status(500).send(err);
-            }
-            res.status(201).send('Producto añadido y tabla creada');
-          });
-        });
-      } else {
-        connection.query(`INSERT INTO ${sourceTableName} (nombre, precio, categoria, estado) VALUES (?, ?, ?, ?)`, [nombre, precio, categoria, estado], (err, result) => {
-          connection.release();
-          if (err) {
-            return res.status(500).send(err);
-          }
-          res.status(201).send('Producto añadido');
-        });
-      }
+      res.status(201).send('Producto añadido exitosamente');
     });
   });
 });
+
 
 // app.get('/admin/get/products', async (req, res) => {
 //   const query = 'SELECT * FROM productos';
