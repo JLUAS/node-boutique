@@ -1477,7 +1477,7 @@ app.get('/download/example', (req, res) => {
   const fileId = req.params.id;
 
   // Consulta SQL para obtener el archivo PDF por ID
-  const query = 'SELECT nombre, imagen FROM Producto WHERE id = 2';
+  const query = 'SELECT name, data FROM pdf_files WHERE id = 2';
   pool.query(query, (err, results) => {
     if (err) {
       console.error('Error al recuperar el archivo de la base de datos:', err);
