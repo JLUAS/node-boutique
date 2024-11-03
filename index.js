@@ -1430,15 +1430,13 @@ app.post('/user/insert/orden/:mesa', async (req, res) => {
 // Endpoint to handle image upload
 app.post('/admin/create/product', upload.single('imagen'), (req, res) => {
   const { nombre, precio, categoria, estado, descripcion, nombre_negocio } = req.body;
-  
-  
 
   fs.readFile(req.file.filename, (err, data) => {
     pool.getConnection((err, connection) => {
       if (err) return res.status(500).send('Error al conectar con la base de datos');
   
       const query = `INSERT INTO Producto (nombre, precio, categoria, estado, descripcion, imagen, nombre_negocio) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-      const values = [nombre, precio, categoria, estado, descripcion, req.file.filename, nombre_negocio];
+      const values = [nombre, precio, categoria, estado, descripcion, data, nombre_negocio];
   
       pool.query(query, values, (err, result) => {
         connection.release();
@@ -1449,35 +1447,22 @@ app.post('/admin/create/product', upload.single('imagen'), (req, res) => {
         res.status(201).send('Producto añadido exitosamente');
       });
     });
-      // if (err) {
-      //     return console.error('Error al leer el archivo PDF: ' + err.message);
-      // }
 
-      // // Preparar la consulta SQL
-      // const query2 = 'INSERT INTO Producto (imagen) VALUES (?) where nombre = ? and precio = ? and descripcion = ?';
-      // const values2 = [data, nombre, precio, descripcion];
-
-      // // Ejecutar la consulta
-      // pool.query(query2, values2, (err, results) => {
-      //     if (err) {
-      //         return console.error('Error al insertar el PDF en la base de datos: ' + err.message);
-      //     }
-      //     console.log('PDF insertado con éxito. ID:', results.insertId);
-      // });
   });
 });
 
 // Función para insertar el PDF en la base de datos
-function insertPdf(filePath,nombre,precio,descripcion) {
+function insertPdf(filePath) {
   // Leer el archivo PDF
+  console.log(filePath)
   fs.readFile(filePath, (err, data) => {
       if (err) {
           return console.error('Error al leer el archivo PDF: ' + err.message);
       }
 
       // Preparar la consulta SQL
-      const query = 'INSERT INTO Producto (data) VALUES (?) where nombre = ? and precio = ? and descripcion = ?';
-      const values = [data, nombre, precio, descripcion];
+      const query = 'INSERT INTO Producto (data) VALUES (?)';
+      const values = [data];
 
       // Ejecutar la consulta
       pool.query(query, values, (err, results) => {
@@ -1490,15 +1475,15 @@ function insertPdf(filePath,nombre,precio,descripcion) {
 }
 // Insertar el PDF llamando a la función
  
-//  const filePath = './descarga.jpg';
-  // insertPdf(filePath);
+  const filePath = './1730597437485.jpg';
+  //  insertPdf(filePath);
+
+
 
 // Endpoint para descargar el archivo PDF usando su ID
 app.get('/download/example', (req, res) => {
-  const fileId = req.params.id;
-
-  // Consulta SQL para obtener el archivo PDF por ID
-  const query = 'SELECT nombre, imagen FROM Producto WHERE id = 10';
+  // Consulta SQL para obtener el archivo imagen por ID
+  const query = 'SELECT imagen, nombre FROM Producto WHERE id = 15'; // Asegúrate de seleccionar el nombre si lo necesitas
   pool.query(query, (err, results) => {
     if (err) {
       console.error('Error al recuperar el archivo de la base de datos:', err);
@@ -1511,15 +1496,15 @@ app.get('/download/example', (req, res) => {
 
     const file = results[0];
 
-    // Configurar encabezados para que el archivo se descargue como PDF
-    // Configurar encabezados para que el archivo se visualice como imagen
-    res.setHeader('Content-Type', 'image/jpeg'); // Cambia según el tipo de imagen
-    res.setHeader('Content-Disposition', `inline; filename=${file.name}`);
-    
-    // Enviar el archivo PDF como respuesta
-    res.send(file.data);
+    // Configurar encabezados para que el archivo se descargue como imagen JPEG
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Content-Disposition', `attachment; filename=${file.nombre || 'imagen'}.jpg`); // Asegúrate de usar una extensión válida
+
+    // Enviar la imagen como respuesta
+    res.send(file.imagen); // Asegúrate de que esto sea correcto
   });
 });
+
 
 
 
