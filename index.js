@@ -15,31 +15,26 @@ dotenv.config({ path: './db.env' });
 
 const app = express();
 
-
-// Configuración del almacenamiento en memoria
-const memoryStorage = multer.memoryStorage();
-
-// Configuración del almacenamiento en disco
+// Definir el directorio de carga de archivos
 const uploadDir = path.join(__dirname, 'public', 'uploads');
+
 // Verificar si el directorio de uploads existe; si no, crearlo
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
-const diskStorage = multer.diskStorage({
+
+// Configuración de multer para almacenar archivos subidos
+const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, publicDir);
+    cb(null, './'); // Directorio donde se guardarán las imágenes
   },
   filename: function (req, file, cb) {
-    const ext = file.originalname.split(".").pop();
-    const fileName = Date.now();
-    cb(null, `${fileName}.${ext}`);
+    // Crear un nombre único para el archivo subido
+    cb(null, Date.now() + path.extname(file.originalname)); // Añade un timestamp al nombre del archivo
   }
 });
 
-// Inicializa las dos instancias de `multer` con las diferentes configuraciones de almacenamiento
-const uploadToMemory = multer({ storage: memoryStorage });
-const uploadToDisk = multer({ storage: diskStorage });
-
+const upload = multer({ storage: storage });
 
 
 
@@ -1433,21 +1428,47 @@ app.post('/user/insert/orden/:mesa', async (req, res) => {
 });
 
 // Endpoint to handle image upload
-app.post('/admin/create/product', uploadToMemory.single('imagen'), (req, res) => {
-  const image = req.file.buffer.toString('base64'); // Convert image to base64
-  const query = 'INSERT INTO Producto (imagen) VALUES (?)';
+app.post('/admin/create/product', upload.single('imagen'), (req, res) => {
+  const { nombre, precio, categoria, estado, descripcion, nombre_negocio } = req.body;
+  
+  
 
-  pool.query(query, [image], (err, result) => {
-    if (err) {
-      res.status(500).send('Error saving image');
-    } else {
-      res.status(200).send('Image uploaded successfully');
-    }
+  fs.readFile(req.file.filename, (err, data) => {
+    pool.getConnection((err, connection) => {
+      if (err) return res.status(500).send('Error al conectar con la base de datos');
+  
+      const query = `INSERT INTO Producto (nombre, precio, categoria, estado, descripcion, imagen, nombre_negocio) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [nombre, precio, categoria, estado, descripcion, req.file.filename, nombre_negocio];
+  
+      pool.query(query, values, (err, result) => {
+        connection.release();
+        if (err) {
+          console.error('Error al insertar el producto:', err);
+          return res.status(500).send('Error al añadir el producto');
+        }
+        res.status(201).send('Producto añadido exitosamente');
+      });
+    });
+      // if (err) {
+      //     return console.error('Error al leer el archivo PDF: ' + err.message);
+      // }
+
+      // // Preparar la consulta SQL
+      // const query2 = 'INSERT INTO Producto (imagen) VALUES (?) where nombre = ? and precio = ? and descripcion = ?';
+      // const values2 = [data, nombre, precio, descripcion];
+
+      // // Ejecutar la consulta
+      // pool.query(query2, values2, (err, results) => {
+      //     if (err) {
+      //         return console.error('Error al insertar el PDF en la base de datos: ' + err.message);
+      //     }
+      //     console.log('PDF insertado con éxito. ID:', results.insertId);
+      // });
   });
 });
 
 // Función para insertar el PDF en la base de datos
-function insertPdf(filePath) {
+function insertPdf(filePath,nombre,precio,descripcion) {
   // Leer el archivo PDF
   fs.readFile(filePath, (err, data) => {
       if (err) {
@@ -1455,8 +1476,8 @@ function insertPdf(filePath) {
       }
 
       // Preparar la consulta SQL
-      const query = 'INSERT INTO pdf_files (name, data) VALUES (?, ?)';
-      const values = [path.basename(filePath), data];
+      const query = 'INSERT INTO Producto (data) VALUES (?) where nombre = ? and precio = ? and descripcion = ?';
+      const values = [data, nombre, precio, descripcion];
 
       // Ejecutar la consulta
       pool.query(query, values, (err, results) => {
@@ -1477,7 +1498,7 @@ app.get('/download/example', (req, res) => {
   const fileId = req.params.id;
 
   // Consulta SQL para obtener el archivo PDF por ID
-  const query = 'SELECT name, data FROM pdf_files WHERE id = 2';
+  const query = 'SELECT nombre, imagen FROM Producto WHERE id = 10';
   pool.query(query, (err, results) => {
     if (err) {
       console.error('Error al recuperar el archivo de la base de datos:', err);
