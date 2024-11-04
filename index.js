@@ -861,7 +861,7 @@ app.get('/user/databases/:username', (req, res) => {
 });
 
 app.post('/admin/create/category', async (req, res) => {
-  const { nombreCategoria } = req.body;
+  const { nombreCategoria, nombre_negocio } = req.body;
   const sourceTableName = 'categorias';
 
   pool.getConnection((err, connection) => {
@@ -875,13 +875,13 @@ app.post('/admin/create/category', async (req, res) => {
       }
 
       if (results.length === 0) {
-        const createTableQuery = `CREATE TABLE ${sourceTableName} (id INT AUTO_INCREMENT PRIMARY KEY, categoria VARCHAR(255) NOT NULL)`;
+        const createTableQuery = `CREATE TABLE ${sourceTableName} (id INT AUTO_INCREMENT PRIMARY KEY, categoria VARCHAR(255) NOT NULL, nombre_negocio VARCHAR(255) NOT NULL)`;
         connection.query(createTableQuery, (err) => {
           if (err) {
             connection.release();
             return res.status(500).send(err);
           }
-          connection.query(`INSERT INTO ${sourceTableName} (categoria) VALUES (?)`, [nombreCategoria], (err, result) => {
+          connection.query(`INSERT INTO ${sourceTableName} (categoria, nombre_negocio) VALUES (?, ?)`, [nombreCategoria, nombre_negocio], (err, result) => {
             connection.release();
             if (err) {
               return res.status(500).send(err);
@@ -890,7 +890,7 @@ app.post('/admin/create/category', async (req, res) => {
           });
         });
       } else {
-        connection.query(`INSERT INTO ${sourceTableName} (categoria) VALUES (?)`, [nombreCategoria], (err, result) => {
+        connection.query(`INSERT INTO ${sourceTableName} (categoria, nombre_negocio) VALUES (?, ?)`, [nombreCategoria, nombre_negocio], (err, result) => {
           connection.release();
           if (err) {
             return res.status(500).send(err);
