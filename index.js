@@ -958,10 +958,10 @@ app.get('/user/get/products', async (req, res) => {
 });
 //Obtener usuarios por rol
 app.get('/admin/get/users/rol', async (req, res) => {
-  const { categoria, username } = req.query;
+  const { rol, username } = req.query;
 
   let query = 'SELECT * FROM usuarios WHERE rol = ? AND nombre_negocio = (SELECT nombre_negocio FROM usuarios WHERE nombre = ? LIMIT 1)LIMIT 0, 25;';
-  let queryParams = [categoria, username ];
+  let queryParams = [rol, username ];
 
   pool.query(query, queryParams, (err, results) => {
     if (err) {
@@ -975,10 +975,10 @@ app.get('/admin/get/users/rol', async (req, res) => {
 
 
 app.get('/admin/get/users/rol/super', async (req, res) => {
-  const { categoria } = req.query;
+  const { rol } = req.query;
 
   let query = 'SELECT * FROM usuarios WHERE rol = ? ;';
-  let queryParams = [categoria ];
+  let queryParams = [rol ];
 
   pool.query(query, queryParams, (err, results) => {
     if (err) {
