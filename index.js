@@ -1480,7 +1480,13 @@ app.post('/admin/create/product', upload.single('imagen'), (req, res) => {
         res.status(201).send('Producto añadido exitosamente');
       });
     });
-
+    fs.unlink(filePath, (unlinkErr) => {
+      if (unlinkErr) {
+        console.error('Error al eliminar el archivo:', unlinkErr);
+      } else {
+        console.log('Archivo eliminado correctamente');
+      }
+    });
   });
 });
 
@@ -1506,12 +1512,6 @@ function insertPdf(filePath) {
       });
   });
 }
-// Insertar el PDF llamando a la función
- 
-  const filePath = './1730597437485.jpg';
-  //  insertPdf(filePath);
-
-
 
 // Endpoint para descargar el archivo PDF usando su ID
 app.get('/download/example/:nombre', (req, res) => {
