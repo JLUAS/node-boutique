@@ -1467,7 +1467,7 @@ app.post('/admin/create/product', upload.single('imagen'), (req, res) => {
   fs.readFile(req.file.filename, (err, data) => {
     pool.getConnection((err, connection) => {
       if (err) return res.status(500).send('Error al conectar con la base de datos');
-  
+      console.log(req.file.filename)
       const query = `INSERT INTO Producto (nombre, precio, categoria, estado, descripcion, imagen, nombre_negocio) VALUES (?, ?, ?, ?, ?, ?, ?)`;
       const values = [nombre, precio, categoria, estado, descripcion, data, nombre_negocio];
   
@@ -1478,17 +1478,22 @@ app.post('/admin/create/product', upload.single('imagen'), (req, res) => {
           return res.status(500).send('Error al añadir el producto');
         }
         res.status(201).send('Producto añadido exitosamente');
+        deleteImage(req.file.filename)
       });
     });
-    fs.unlink(filePath, (unlinkErr) => {
-      if (unlinkErr) {
-        console.error('Error al eliminar el archivo:', unlinkErr);
-      } else {
-        console.log('Archivo eliminado correctamente');
-      }
-    });
+    
   });
 });
+
+function deleteImage(filePath){
+  fs.unlink(filePath, (unlinkErr) => {
+    if (unlinkErr) {
+      console.error('Error al eliminar el archivo:', unlinkErr);
+    } else {
+      console.log('Archivo eliminado correctamente');
+    }
+  });
+}
 
 // Función para insertar el PDF en la base de datos
 function insertPdf(filePath) {
