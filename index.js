@@ -905,9 +905,9 @@ app.post('/admin/create/category/:nombre_negocio', async (req, res) => {
 });
 
 app.get('/admin/get/category/:nombrenegocio', async (req, res) => {
-  const nombre_negocio = req.params.nombre_negocio; // Obtener el valor de los query params
+  const nombre_negocio = req.params.nombrenegocio; // Obtener el valor de los query params
   const query = "SELECT categoria from categorias where nombre_negocio = ?";
-
+  console.log(nombre_negocio)
   pool.query(query, [nombre_negocio], (err, results) => {
     if (err) {
       console.error('Error fetching categories:', err);
@@ -946,7 +946,7 @@ app.get('/admin/get/rol/super', async (req, res) => {
   });
 });
 
-app.get('/admin/get/products', async (req, res) => {
+app.get('/super/get/products', async (req, res) => {
   const query = 'SELECT * FROM Producto';
 
   pool.query(query, (err, results) => {
@@ -958,6 +958,21 @@ app.get('/admin/get/products', async (req, res) => {
     }
   });
 });
+
+app.get('/admin/get/products', async (req, res) => {
+  const nombre_negocio = req.params.nombre_negocio
+  const query = 'SELECT * FROM Producto where nombre_negocio = ?';
+
+  pool.query(query, [nombre_negocio], (err, results) => {
+    if (err) {
+      console.error('Error fetching categories:', err);
+      res.status(500).send('Error fetching categories');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
 
 app.get('/user/get/products', async (req, res) => {
   const { categoria } = req.query;
@@ -1499,10 +1514,12 @@ function insertPdf(filePath) {
 
 
 // Endpoint para descargar el archivo PDF usando su ID
-app.get('/download/example', (req, res) => {
+app.get('/download/example/:nombre', (req, res) => {
   // Consulta SQL para obtener el archivo imagen por ID
-  const query = 'SELECT imagen, nombre FROM Producto WHERE id = 15'; // Asegúrate de seleccionar el nombre si lo necesitas
-  pool.query(query, (err, results) => {
+  const nombre = req.params.nombre
+  console.log(nombre)
+  const query = 'SELECT imagen, nombre FROM Producto WHERE nombre = ?'; // Asegúrate de seleccionar el nombre si lo necesitas
+  pool.query(query, [nombre], (err, results) => {
     if (err) {
       console.error('Error al recuperar el archivo de la base de datos:', err);
       return res.status(500).send('Error al obtener el archivo');
