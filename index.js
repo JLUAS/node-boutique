@@ -1094,7 +1094,6 @@ app.put('/admin/update/user/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
-  console.log(nombre, password, id)
   const query = `UPDATE usuarios SET password = ?  WHERE id = ?`;
 
   pool.query(query, [hashedPassword, id], (err, result) => {
@@ -1105,10 +1104,37 @@ app.put('/admin/update/user/:id', async (req, res) => {
 
     res.status(200).send('Producto actualizado');
   });
-
-
-
 });
+
+app.put('/admin/update/product', async (req, res) => {
+  const { nombre, precio, categoria, estado } = req.body;
+  const query =  `UPDATE Producto SET nombre = ?, precio = ?, categoria = ?, estado = ? WHERE nombre = ?`;
+
+  pool.query(query, [nombre, precio, categoria, estado, nombre], (err, result) => {
+    if (err) {
+      console.error('Error updating product:', err);
+      return res.status(500).send('Error updating product');
+    }
+
+    res.status(200).send('Producto actualizado');
+  });
+});
+
+app.delete('/admin/delete/product/:id', async (req, res) => {
+  const { id } = req.params;
+  const query = `DELETE FROM Producto WHERE id = ?`;
+
+  pool.query(query, [id], (err, result) => {
+    if (err) {
+      console.error('Error deleting product:', err);
+      return res.status(500).send('Error deleting product');
+    }
+
+    res.status(200).send('Producto eliminado');
+  });
+});
+
+
 
 app.post('/admin/create/mesa', async (req, res) => {
   const { mesa, estado } = req.body;
