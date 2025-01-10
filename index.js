@@ -85,7 +85,7 @@ handleDisconnect();
 
 app.post('/register/call', async (req, res) => {
   const { nombre, email } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
