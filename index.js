@@ -83,7 +83,7 @@ function handleDisconnect() {
 
 handleDisconnect();
 
-app.post('/register/admin', async (req, res) => {
+app.post('/register/call', async (req, res) => {
   const { nombre, email } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
 
