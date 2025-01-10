@@ -83,6 +83,45 @@ function handleDisconnect() {
 
 handleDisconnect();
 
+app.post('/register/admin', async (req, res) => {
+  const { nombre, email } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  pool.getConnection((err, connection) => {
+    if (err) return res.status(500).send(err);
+
+    connection.beginTransaction(err => {
+      if (err) {
+        connection.release();
+        return res.status(500).send(err);
+      }
+      connection.query('INSERT INTO usuarios_call (nombre,email) VALUES (?, ?)', [nombre, email], (err, result) => {
+        if (err) {
+          console.error("Error en la consulta SQL:", err);
+          connection.rollback(() => {
+              connection.release();
+              return res.status(500).send("Error en la base de datos.");
+          });
+      }else {
+          connection.commit(err => {
+            if (err) {
+              connection.rollback(() => {
+                connection.release();
+                return res.status(500).send(err);
+              });
+            } else {
+              connection.release();
+              res.status(201).send('Administrador registrado correctamente');
+            }
+          });
+        }
+      });
+    });
+  });
+});
+
+
+
 // app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
 //   const baseDeDatos = req.body.tableName;
 //   const tableName = `baseDeDatos_${baseDeDatos}`;
@@ -973,6 +1012,20 @@ app.get('/admin/get/products', async (req, res) => {
   });
 });
 
+app.get('/admin/get/products/category', async (req, res) => {
+  const {nombre_negocio, categoria} = req.query
+  const query = 'SELECT * FROM Producto where nombre_negocio = ? and categoria = ?';
+
+  pool.query(query, [nombre_negocio, categoria], (err, results) => {
+    if (err) {
+      console.error('Error fetching categories:', err);
+      res.status(500).send('Error fetching categories');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
 
 app.get('/user/get/products', async (req, res) => {
   const { categoria } = req.query;
@@ -1136,10 +1189,10 @@ app.delete('/admin/delete/product/:id', async (req, res) => {
 
 
 
-app.post('/admin/create/mesa', async (req, res) => {
-  const { mesa, estado } = req.body;
-  const sourceTableName = 'mesas';
-
+app.post('/admin/create/mesa/:nombre_negocio', async (req, res) => {
+  const nombre_negocio = req.params.nombre_negocio;
+  const { mesa, estado, personas } = req.body;
+  const sourceTableName = 'Mesa';
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
 
@@ -1154,14 +1207,16 @@ app.post('/admin/create/mesa', async (req, res) => {
         const createTableQuery = `CREATE TABLE ${sourceTableName} (
           id INT AUTO_INCREMENT PRIMARY KEY,
           mesa INT NOT NULL,
-          estado VARCHAR(255) NOT NULL
+          personas INT NOT NULL,
+          estado VARCHAR(255) NOT NULL,
+          nombre_negocio text(255) NOT NULL
         )`;
         connection.query(createTableQuery, (err) => {
           if (err) {
             connection.release();
             return res.status(500).send(err);
           }
-          connection.query(`INSERT INTO ${sourceTableName} (mesa, estado) VALUES (?, ?)`, [mesa, estado], (err, result) => {
+          connection.query(`INSERT INTO ${sourceTableName} (mesa, estado, personas, nombre_negocio) VALUES (?, ?, ?, ?)`, [mesa, estado, personas, nombre_negocio], (err, result) => {
             connection.release();
             if (err) {
               return res.status(500).send(err);
@@ -1170,7 +1225,7 @@ app.post('/admin/create/mesa', async (req, res) => {
           });
         });
       } else {
-        connection.query(`INSERT INTO ${sourceTableName} (mesa, estado) VALUES (?, ?)`, [mesa, estado], (err, result) => {
+        connection.query(`INSERT INTO ${sourceTableName} (mesa, estado, personas, nombre_negocio) VALUES (?, ?, ?, ?)`, [mesa, estado, personas, nombre_negocio], (err, result) => {
           connection.release();
           if (err) {
             return res.status(500).send(err);
@@ -1182,9 +1237,10 @@ app.post('/admin/create/mesa', async (req, res) => {
   });
 });
 
-app.get('/admin/get/mesa', async (req, res) => {
-  let query = 'SELECT * FROM mesas';
-  pool.query(query, (err, results) => {
+app.get('/admin/get/mesa/:nombre_negocio', async (req, res) => {
+  const nombre_negocio = req.params.nombre_negocio
+  let query = 'SELECT * FROM Mesa WHERE nombre_negocio = ?';
+  pool.query(query, [nombre_negocio],(err, results) => {
     if (err) {
       console.error('Error fetching products:', err);
       res.status(500).send('Error fetching products');
